@@ -2,30 +2,22 @@
 'use client';
 
 import { SignoutEl } from "@/components/auth";
+import { pagesMapSidebar } from "@/data/pages";
 import {
-    Check, ChevronRight, ChevronsUpDown,
-    Component, File, FileSpreadsheet, FileText, Home, List, ListChevronsUpDown, LogOut,
+    ChevronRight,
+    Home, ListChevronsUpDown, LogOut,
     PanelsTopLeft, User2,
-    LockKeyhole,
-    BookX,
     StretchHorizontal,
-    Bot,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
-const defaultItems = [
+const defaultItems = pagesMapSidebar || [
     {
         name: 'Home',
         icon: (props) => <Home {...props} />,
         href: '/',
-        subItems: []
-    },
-    {
-        name: 'AI Agent',
-        icon: (props) => <Bot {...props} />,
-        href: '/ai-agent',
         subItems: []
     },
     {
@@ -130,8 +122,8 @@ export default function Sidebar({ items = defaultItems, pathname = '', searchPar
         <div className={`relative h-screen border-r-2 border-gray-200 bg-gray-50 flex flex-col flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'
             }`}>
             {/* Header */}
-            <div className={`py-6 px-3 overflow-hidden border-b-[1.5px] border-gray-200 ${isCollapsed ? '' : ''}`}>
-                <div className="flex items-center justify-between">
+            <div className={`py-6 px-3 h-20 overflow-hidden border-b-[1.5px] border-gray-200 ${isCollapsed ? '' : ''}`}>
+                <div className="flex items-center justify-between ">
                     <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
                         <Image
                             src="/images/logos/main.png"
@@ -141,7 +133,7 @@ export default function Sidebar({ items = defaultItems, pathname = '', searchPar
                         />
                         {!isCollapsed && (
                             <div className="text-2xl font-semibold ">
-                                SuperApp
+                                CDC SMM
                             </div>
                         )}
                     </div>

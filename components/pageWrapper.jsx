@@ -23,12 +23,14 @@ const geistMono = localFont({
     weight: "100 900",
 });
 
+const PROJECT_NAME = process.env.PROJECT_NAME || "App";
+const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'aaaa';
+
 export const metadata = {
-    title: "SuperApp",
-    description: "My SuperApp Application",
+    title: PROJECT_NAME,
+    description: `My ${PROJECT_NAME} Application`,
 };
 
-const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'aaaa';
 
 
 export default async function PageWrapper({ children, params, searchParams }) {

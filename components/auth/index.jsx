@@ -124,7 +124,6 @@ export default function AuthEl({ type = 'signin', pathname, searchParams }) {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     }
-
     const handleSubmit = async (e) => {
         try {
             e.preventDefault();
@@ -200,7 +199,6 @@ export default function AuthEl({ type = 'signin', pathname, searchParams }) {
         }
 
     }
-
     const getHeaderTitle = () => {
         if (type === 'signin') {
             return 'Welcome back';
@@ -219,7 +217,6 @@ export default function AuthEl({ type = 'signin', pathname, searchParams }) {
         }
         return ''
     }
-
     const getButtonText = () => {
         if (type === 'signin') {
             return 'Sign In';
@@ -230,7 +227,6 @@ export default function AuthEl({ type = 'signin', pathname, searchParams }) {
         }
         return 'Continue';
     }
-
     // console.log('formErrors ==> ', formErrors);
     useEffect(() => {
         // on value change set form errors to empty
@@ -250,7 +246,6 @@ export default function AuthEl({ type = 'signin', pathname, searchParams }) {
         }
     }, [Object.values(formData).join('')]);
 
-
     // if auth us successful, show signin element
     if (isSuccess && ['signin', 'signup'].includes(type)) {
         return <SigninEl signResData={successData} />
@@ -260,7 +255,7 @@ export default function AuthEl({ type = 'signin', pathname, searchParams }) {
         <div className="w-full h-full flex justify-center"  >
 
             {/* gird */}
-            <GridPattern
+            {/* <GridPattern
                 width={40}
                 height={40}
                 x={-1}
@@ -268,7 +263,7 @@ export default function AuthEl({ type = 'signin', pathname, searchParams }) {
                 strokeDasharray={"0"}
                 squares={[[0, 0], [2, 2], [4, 4], [6, 6], [8, 8], [10, 10], [12, 12], [14, 14], [16, 16], [18, 18]]}
                 className={'z-0 opacity-30'}
-            />
+            /> */}
 
             <div className="w-[90%] md:w-[450px] min-h-60 mt-10 ">
                 {/* branding */}
@@ -281,7 +276,7 @@ export default function AuthEl({ type = 'signin', pathname, searchParams }) {
                     />
                     <div className="text-3xl">
                         <span className="font-light" >
-                            SuperApp
+                            CDC SMM
                         </span>
 
                     </div>

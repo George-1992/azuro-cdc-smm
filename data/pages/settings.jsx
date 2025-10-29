@@ -4,6 +4,8 @@ import { notify } from "@/components/sonnar/sonnar";
 import { useState, useEffect, use } from "react";
 import { ExpandableModal, PopupModal } from "@/components/other/modals";
 import Table from "@/components/table";
+import { makeFirstLetterUppercase } from "@/utils/other";
+import FormBuilder from "@/components/formBuilder";
 
 
 const allowSignInUserStatuses = ['active', 'pending'];
@@ -52,10 +54,23 @@ export default function Settings({ params, pathname, searchParams, session, user
     const [users, setUsers] = useState([]);
 
 
+    // webhooks data
+    const [webhooksData, setWebhooksData] = useState({
+        sources: '',
+        avatars: '',
+    });
+
+
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
+    const handleWebhookInputChange = (e) => {
+        const { name, value } = e.target;
+        setWebhooksData(prev => ({ ...prev, [name]: value }));
+    };
+
 
     const handleFirstForm = async (e) => {
         try {
@@ -368,6 +383,61 @@ export default function Settings({ params, pathname, searchParams, session, user
                 </div>
             </div>
 
+
+            {/* webhooks */}
+            {/* webhooks for sources and avatars */}
+            <div className="card-1 ">
+                <h2 className="text-xl mb-4">
+                    Webhooks n8n
+                </h2>
+                <div className="flex flex-col gap-3">
+                    {/* {
+                        ['sources', 'avatars'].map((whType, idx) => {
+                            return (
+                                <div key={idx} className="flex flex-col gap-1">
+                                    <h4 className="font-semibold">{makeFirstLetterUppercase(whType)} Webhooks</h4>
+                                    <input
+                                        type="text"
+                                        className="form-control w-full md:w-10/12"
+                                        value={`https://crazy-webhook-n8n-cloud.frog.com/v1/webhooks/${whType}?account_id=${account?.id}&api_key=${account?.api_key}`}
+                                    />
+                                </div>
+                            );
+                        })
+                    } */}
+
+                    <FormBuilder
+                        formData={webhooksData}
+                        // renderOrder={[
+                        //     ['sources']
+                        //     ['avatars']
+                        // ]}
+                        fields={[
+                            {
+                                name: 'sources',
+                                label: 'Sources Webhook',
+                                placeholder: 'Enter your sources webhook URL',
+                                type: 'url',
+                                required: true,
+                                hidden: false,
+                                disabled: false,
+                                validator: 'url'
+                            },
+                            {
+                                name: 'avatars',
+                                label: 'Avatars Webhook',
+                                placeholder: 'Enter your avatars webhook URL',
+                                type: 'url',
+                                required: true,
+                                hidden: false,
+                                disabled: false,
+                                validator: 'url'
+                            }
+                        ]}
+                    />
+                </div>
+
+            </div>
 
             {/* users table */}
             <div className="relative flex items-start justify-start flex-col gap-3 rounded-lg ">

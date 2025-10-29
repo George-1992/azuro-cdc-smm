@@ -21,13 +21,8 @@ model accounts {
   updated_at DateTime @updatedAt
 
   users_and_accounts users_and_accounts[]
-  tasks              tasks[]
-  leads              leads[]
-  contacts           contacts[]
-  email_templates    email_templates[]
-  credentials        credentials[]
-  filter_views       filter_views[]
-  condos             condos[]
+  sources            sources[]
+  webhooks           webhooks[]
 
   @@index([name])
   @@index([status])
@@ -45,8 +40,6 @@ model users {
   updated_at DateTime @updatedAt
 
   users_and_accounts users_and_accounts[]
-  tasks              tasks[]
-  filter_views       filter_views[]
 
   @@index([email])
   @@index([status])
@@ -72,198 +65,35 @@ model users_and_accounts {
   @@index([role])
 }
 
-model tasks {
-  id             String    @id @default(cuid())
-  title          String    @default("Task Title")
-  // borrower       String?
-  status         String    @default("pending")
-  priority       String    @default("medium")
-  assigned_users Json?     @default("[]")
-  due_date       DateTime?
-  description    String?   @default("")
-  created_at     DateTime  @default(now())
-  updated_at     DateTime  @updatedAt
-  creator_id     String
-  creator        users     @relation(fields: [creator_id], references: [id])
-  account_id     String
-  account        accounts  @relation(fields: [account_id], references: [id])
-  lead_id        String?
-  lead           leads?    @relation(fields: [lead_id], references: [id])
+model sources {
+  id               String   @id @default(cuid())
+  name             String
+  status           String   @default("processing")
+  type             String
+  fixed_idea       String?
+  idea_inspiration String?
+  url              String?
+  text             String?
+  internal_note    String?
+  config           Json?    @default("{}")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  account_id       String
+  account          accounts @relation(fields: [account_id], references: [id])
 
-  @@index([title])
+  @@index([name])
+  @@index([type])
   @@index([status])
-  @@index([priority])
-  @@index([due_date])
-  @@index([account_id])
 }
 
-model contacts {
-  id         String   @id @default(cuid())
-  status     String   @default("active")
-  type       String?  @default("borrower") // lead, customer
-  first_name String?
-  last_name  String?
-  email      String?  @unique
-  phone      String?  @unique
-  company    String?
-  notes      String?
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  leads      leads[]
-  account_id String
-  account    accounts @relation(fields: [account_id], references: [id])
-
-  @@index([status])
-  @@index([first_name])
-  @@index([last_name])
-  @@index([email])
-  @@index([account_id])
-}
-
-model leads {
-  id           String  @id @default(cuid())
-  status       String  @default("new")
-  stage        String  @default("lead") // lead, customer
-  description  String? @default("")
-  notes        Json?   @default("[]")
-  activity     Json?   @default("[]")
-  sms_messages Json?   @default("[]")
-
-  first_name       String? @default("")
-  last_name        String? @default("")
-  phone            String? @unique
-  email            String? @unique
-  buyers_agent     String? @default("")
-  loan_amount      Float?  @default(0)
-  sales_price      Float?  @default(0)
-  transaction_type String? @default("") // purchase, refinance, etc.
-  purchase_type    String? @default("") // primary, secondary, investment
-  property_type    String? @default("") // condo, single family, townhouse, etc
-  loan_program     String? @default("") // FHA, VA, Conventional, etc
-
-  loan_estimate Json? @default("{}")
-
-  priority_level     String?   @default("medium") // hot, warm, cold
-  contact_preference String?   @default("") // phone, email, text
-  follow_up_required String?   @default("") // yes, no
-  referred_via       String?   @default("")
-  referral_source    String?   @default("")
-  lead_strength      String?   @default("") // 
-  due_date           DateTime?
-
-  // team
-  pre_approved_expert String? @default("")
-  processor           String? @default("")
-  lender              String? @default("")
-  account_executive   String? @default("")
-
-  account_id String
-  account    accounts @relation(fields: [account_id], references: [id])
-
-  created_at  DateTime      @default(now())
-  updated_at  DateTime      @updatedAt
-  contacts    contacts[]
-  tasks       tasks[]
-  lead_events lead_events[]
-
-  @@index([status])
-  @@index([stage])
-  @@index([account_id])
-}
-
-model lead_events {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  created_at  DateTime @default(now())
-  lead_id     String
-  lead        leads    @relation(fields: [lead_id], references: [id])
-
-  @@index([title])
-  @@index([lead_id])
-}
-
-model email_templates {
+model webhooks {
   id         String   @id @default(cuid())
   name       String
-  subject    String
-  body       String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  account_id String
-  account    accounts @relation(fields: [account_id], references: [id])
-
-  @@index([name])
-  @@index([account_id])
-}
-
-model credentials {
-  id         String   @id @default(cuid())
-  name       String
-  username   String
-  pass       String
-  notes      String?
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  account_id String
-  account    accounts @relation(fields: [account_id], references: [id])
-
-  @@index([name])
-  @@index([account_id])
-}
-
-model filter_views {
-  id         String  @id @default(cuid())
-  name       String
-  pathname   String
-  collection String?
-
-  key      String
-  label    String?
-  operator String
-  value    String
-
-  data       Json     @default("{}")
+  url        String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   account_id String
   account    accounts @relation(fields: [account_id], references: [id])
-  user_id    String
-  user       users    @relation(fields: [user_id], references: [id])
-
-  @@unique([pathname, name, user_id])
-  @@index([name])
-  @@index([pathname])
-  @@index([collection])
-  @@index([account_id])
-  @@index([user_id])
-}
-
-model condos {
-  id                  String   @id @default(cuid())
-  name                String
-  address             String
-  city                String
-  state               String
-  zip                 String
-  approval_type       String
-  approval_expiration DateTime
-  primary_down_pmt    Float
-  secondary_down_pmt  Float
-  investment_down_pmt Float
-  source              String
-  notes               String?
-  data                Json     @default("{}")
-  created_at          DateTime @default(now())
-  updated_at          DateTime @updatedAt
-  account_id          String
-  account             accounts @relation(fields: [account_id], references: [id])
 
   @@index([name])
-  @@index([city])
-  @@index([state])
-  @@index([zip])
-  @@index([account_id])
 }

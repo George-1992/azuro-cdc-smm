@@ -51,7 +51,8 @@ export const Table = ({
     account = {},
     user = {},
 
-    onChange = (rowIndex, columnKey, newValue) => { console.log('Edit:', rowIndex, columnKey, newValue); },
+
+    onChange = (updatedData) => { console.log('updatedData:', updatedData); },
     onRowChange = (rowIndex, newRowData) => { console.log('Row Change:', rowIndex, newRowData); return { success: false } },
     onRowDelete = (rowIndex, rowData) => { console.log('Row Delete:', rowIndex, rowData); },
     onAddNew = (newRowData) => { console.log('Add New Row:', newRowData); return { success: false } },
@@ -177,6 +178,7 @@ export const Table = ({
             [columnKey]: newValue
         };
         _setData(updatedData);
+        onChange(updatedData);
     };
     const handleRowChangeDismiss = (row) => {
         // console.log('Row change dismissed:', row);
@@ -721,6 +723,7 @@ export const Table = ({
                             renderOrder={getFormBuilderRenderOrder()}
                             fields={[
                                 ...columns.map(col => ({
+                                    ...col,
                                     name: col.key,
                                     label: col.title,
                                     type: col.type || 'text',
@@ -735,7 +738,7 @@ export const Table = ({
                                     placeholder: col.placeholder || `Enter ${col.title.toLowerCase()}...`,
                                     showTime: col.showTime || false,
                                     format: col.format || 'YYYY-MM-DD',
-                                    rows: col.rows || 3,
+                                    rows: col.rows || 3, 
                                 })).filter(f => !nonEditables.includes(f.name)),
                                 ...(isUserTable ? [{
                                     ...passwordField,
