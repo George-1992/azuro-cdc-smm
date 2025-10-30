@@ -58,8 +58,8 @@ export default function TopNav({ pathname, data, searchParams, session, user, ac
                 </div>
 
                 <Dropdown>
-                    <div data-type="trigger" className="flex items-center justify-center p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors">
-                        <Settings className="h-5 w-5 text-gray-600" />
+                    <div data-type="trigger" className="flex items-center justify-center p-1 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors">
+                        <Settings className="h-5 w-5 " />
                     </div>
                     <div data-type="content" className="w-48 right-0">
                         <div className="px-4 py-2 border-b border-gray-100">

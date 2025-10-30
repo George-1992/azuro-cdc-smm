@@ -2,6 +2,7 @@
 'use client';
 
 import { SignoutEl } from "@/components/auth";
+import Organizations from "@/components/other/organizations";
 import { pagesMapSidebar } from "@/data/pages";
 import {
     ChevronRight,
@@ -31,7 +32,7 @@ const defaultItems = pagesMapSidebar || [
     },
 ]
 
-export default function Sidebar({ items = defaultItems, pathname = '', searchParams, session, user, account }) {
+export default function Sidebar({ items = defaultItems, pathname = '', searchParams, session, user, account, orgs, org }) {
 
     // console.log('Sidebar render ==> ', pathname);
 
@@ -122,29 +123,35 @@ export default function Sidebar({ items = defaultItems, pathname = '', searchPar
         <div className={`relative h-screen border-r-2 border-gray-200 bg-gray-50 flex flex-col flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'
             }`}>
             {/* Header */}
-            <div className={`py-6 px-3 h-20 overflow-hidden border-b-[1.5px] border-gray-200 ${isCollapsed ? '' : ''}`}>
+            <div className={`py-3 px-3 h-28 overflow-hidden border-b-[1.5px] border-gray-200 ${isCollapsed ? '' : ''}`}>
                 <div className="flex items-center justify-between ">
                     <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
                         <Image
                             src="/images/logos/main.png"
                             alt="Logo"
-                            width={35}
-                            height={35}
+                            width={25}
+                            height={25}
                         />
                         {!isCollapsed && (
-                            <div className="text-2xl font-semibold ">
+                            <div className="text-large font-semibold ">
                                 CDC SMM
                             </div>
                         )}
                     </div>
                     <button
                         onClick={() => setIsCollapsed(!isCollapsed)}
+                        data-id='collapse-sidebar-btn'
                         className="p-1 rounded hover:bg-gray-100 transition-colors absolute -right-10 top-5 transform -translate-y-1/2"
                         title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                     >
                         <PanelsTopLeft className="w-5 h-5 text-gray-600" />
                     </button>
                 </div>
+
+                <div className="">
+                    <Organizations session={session} user={user} account={account} isCollapsed={isCollapsed} orgs={orgs} org={org} />
+                </div>
+
             </div>
 
             {/* Navigation */}

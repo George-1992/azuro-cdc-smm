@@ -519,7 +519,9 @@ export const Table = ({
                                             val = val.join(', ');
                                         }
 
+                                        // console.log('table -  row-edit val: ', val);
                                         if (typeof val === 'object' && val !== null) {
+                                            // val = 'bbb';
                                             val = JSON.stringify(val);
                                         }
                                         return (
@@ -563,7 +565,7 @@ export const Table = ({
                                                     {
                                                         isEditMode && <div className={``}>
                                                             {
-                                                                ColComponent && EditComponent ? (
+                                                                (ColComponent && EditComponent) && !isEditMode ? (
                                                                     EditComponent
                                                                         ? <EditComponent
                                                                             value={row[column.key]}
@@ -738,7 +740,7 @@ export const Table = ({
                                     placeholder: col.placeholder || `Enter ${col.title.toLowerCase()}...`,
                                     showTime: col.showTime || false,
                                     format: col.format || 'YYYY-MM-DD',
-                                    rows: col.rows || 3, 
+                                    rows: col.rows || 3,
                                 })).filter(f => !nonEditables.includes(f.name)),
                                 ...(isUserTable ? [{
                                     ...passwordField,

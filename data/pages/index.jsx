@@ -1,11 +1,14 @@
 import AuthEl from "@/components/auth"
 import VerifyAccount from "@/components/auth/verify";
+import Avatars from "@/data/pages/avatars";
+import Credentials from "@/data/pages/credentials";
 import Home from "@/data/pages/home";
 import Profile from "@/data/pages/profile"
 import Settings from "@/data/pages/settings";
 import Sources from "@/data/pages/sources";
+import Team from "@/data/pages/team";
 import Test from "@/data/pages/test";
-import { BotIcon, CircleGauge, HashIcon, HomeIcon, LibraryBig, ListChevronsUpDown, LucideLayoutDashboard, MegaphoneIcon, Newspaper, SettingsIcon, Share2, Share2Icon, SquareUser, StretchHorizontal, ToolCaseIcon, Users } from "lucide-react";
+import { BotIcon, CircleGauge, HashIcon, HomeIcon, LibraryBig, ListChevronsUpDown, Lock, LucideLayoutDashboard, MegaphoneIcon, Newspaper, SettingsIcon, Share2, Share2Icon, SquareUser, StretchHorizontal, ToolCaseIcon, Users } from "lucide-react";
 
 const pagesMap = [
     // AUTH PAGES
@@ -54,7 +57,21 @@ const pagesMap = [
         pathname: '/sources',
         Component: (props) => { return <Sources {...props} />; },
         // Component: (props) => { return <div>Sources</div> },
-    }
+    },
+    {
+        pathname: '/credentials',
+        Component: (props) => { return <Credentials {...props} />; },
+        // Component: (props) => { return <div>Sources</div> },
+    },
+    {
+        pathname: '/team',
+        Component: (props) => { return <Team {...props} />; },
+    },
+    {
+        pathname: '/avatars',
+        Component: (props) => { return <Avatars {...props} />; },
+        // Component: (props) => { return <div>Sources</div> },
+    },
 
 ]
 
@@ -100,9 +117,9 @@ export const pagesMapSidebar = [
         subItems: []
     },
     {
-        name: 'Connections',
-        icon: (props) => <Share2Icon {...props} />,
-        href: '/connections',
+        name: 'Credentials',
+        icon: (props) => <Lock {...props} />,
+        href: '/credentials',
         subItems: []
     },
     {

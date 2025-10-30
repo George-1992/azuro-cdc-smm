@@ -1,64 +1,108 @@
 'use client';
-import { saCreateItem, saDeleteItem, saGetItems, saUpdateItem } from "@/components/serverActions.jsx";
+import {
+    saCreateItem, saDeleteItem,
+    saGetItem,
+    saGetItems, saUpdateItem
+} from "@/components/serverActions.jsx";
 import { notify } from "@/components/sonnar/sonnar";
 import { useState, useEffect, use } from "react";
 import { ExpandableModal, PopupModal } from "@/components/other/modals";
 import Table from "@/components/table";
 import { makeFirstLetterUppercase } from "@/utils/other";
 import FormBuilder from "@/components/formBuilder";
+import { webhookTypes } from "@/data/types";
+import Image from "next/image";
+import { Building, TextInitial } from "lucide-react";
 
 
-const allowSignInUserStatuses = ['active', 'pending'];
 
-export default function Settings({ params, pathname, searchParams, session, user, account }) {
+export default function Settings({ params, pathname, searchParams, session, user, account, org, orgs }) {
 
-    const allFields = [
-        {
-            name: 'id',
-            label: 'ID',
-            placeholder: 'Enter your ID',
-            type: 'text',
-            required: true,
-            hidden: false,
-            disabled: true,
-        },
-        {
-            name: 'name',
-            label: 'Name',
-            placeholder: 'Enter your name',
-            type: 'text',
-            required: true,
-            hidden: false,
-            disabled: false,
-        },
-    ]
 
-    const fields = allFields
-    const renderOrder = [
-        ['id'],
-        ['name'],
-    ];
+    const blotato = {
+        apiKey: ''
+    }
+    const webhooksDefault = {
+        sources: '',
+        avatars: ''
+    };
 
-    const isOwner = user?.role === 'owner';
+    let preOrg = { ...org };
+    if (!preOrg.webhooks) {
+        preOrg.webhooks = webhooksDefault;
+    }
+    if (!preOrg.configs) {
+        preOrg.configs = {};
+    }
+    if (!preOrg.configs.blotato) {
+        preOrg.configs.blotato = blotato;
+    }
 
-    const [formData, setFormData] = useState({
-        id: account?.id || '',
-        name: account?.name || '',
-    });
+    const [_org, _setOrg] = useState(preOrg);
     const [formErrors, setFormErrors] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const minLoadingTime = 500;
 
-    // users
-    const [users, setUsers] = useState([]);
 
 
     // webhooks data
-    const [webhooksData, setWebhooksData] = useState({
-        sources: '',
-        avatars: '',
-    });
+    const [isPopupOpen, setIsPopupOpen] = useState(false);
+
+
+    const handleOrgUpdate = async (data) => {
+
+
+        try {
+            setIsLoading(true);
+            setIsActionLoading(true);
+
+            let toSaveData = data ? {
+                name: data.name,
+            } : {};
+            if (data.webhooks) {
+                toSaveData.webhooks = data.webhooks;
+            }
+            if (data.configs) {
+                toSaveData.configs = data.configs;
+            }
+
+
+            const resData = await saUpdateItem({
+                collection: 'organizations',
+                query: {
+                    where: {
+                        id: _org.id
+                    },
+                    data: toSaveData
+                }
+            });
+            // console.log('resData: ', resData);
+
+
+
+
+            if (resData && resData.success) {
+                notify({
+                    type: 'success',
+                    message: 'Updated !',
+                });
+                _setOrg(resData.data);
+            } else {
+                notify({
+                    type: 'error',
+                    message: resData.message || 'Error updating organization',
+                });
+            }
+
+
+        } catch (error) {
+            console.error('Error in handleOrgUpdate: ', error);
+        } finally {
+            setIsLoading(false);
+            setIsActionLoading(false);
+        }
+    };
 
 
 
@@ -66,30 +110,32 @@ export default function Settings({ params, pathname, searchParams, session, user
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
-    const handleWebhookInputChange = (e) => {
-        const { name, value } = e.target;
-        setWebhooksData(prev => ({ ...prev, [name]: value }));
-    };
-
-
-    const handleFirstForm = async (e) => {
+    const handleAccountUpdate = async (data) => {
         try {
-            e.preventDefault();
-            // console.log('Form submitted with data: ', formData);
-            // compare to session if its the same then dont update
-            if (formData.firstName === session?.first_name &&
-                formData.lastName === session?.last_name &&
-                formData.email === session?.email
-            ) {
-                notify({
-                    type: 'warning',
-                    message: 'No changes detected',
-                })
-                return;
-            }
+            // // console.log('Form submitted with data: ', formData);
+            // // compare to session if its the same then dont update
+            // if (_org.firstName === session?.first_name &&
+            //     _org.lastName === session?.last_name &&
+            //     _org.email === session?.email
+            // ) {
+            //     notify({
+            //         type: 'warning',
+            //         message: 'No changes detected',
+            //     })
+            //     return;
+            // }
 
             const startTimestamp = Date.now();
             setIsLoading(true);
+            setIsActionLoading(true);
+
+            let toSaveData = {
+                name: data.name,
+                webhooks: data.webhooks || {}
+            };
+            // console.log('data: ', data);
+            // console.log('toSaveData: ', toSaveData);
+
 
             const resObj = await saUpdateItem({
                 collection: 'accounts',
@@ -97,9 +143,7 @@ export default function Settings({ params, pathname, searchParams, session, user
                     where: {
                         id: account?.id
                     },
-                    data: {
-                        name: formData.name
-                    }
+                    data: toSaveData
                 },
             })
 
@@ -109,6 +153,7 @@ export default function Settings({ params, pathname, searchParams, session, user
                 await new Promise(res => setTimeout(res, minLoadingTime - elapsed));
             }
             setIsLoading(false);
+            setIsActionLoading(false);
 
             // console.log('resObj ==> ', resObj);
             if (resObj.success) {
@@ -116,6 +161,7 @@ export default function Settings({ params, pathname, searchParams, session, user
                     type: 'success',
                     message: 'Updated successfully',
                 })
+                setFormData(toSaveData);
             } else {
                 notify({
                     type: 'error',
@@ -126,123 +172,11 @@ export default function Settings({ params, pathname, searchParams, session, user
 
         } catch (error) {
             setIsLoading(false);
+            setIsActionLoading(false);
             console.error('Error in handleFirstForm: ', error);
         }
-    };
+    }
 
-
-    const handleNewUser = async (newUser) => {
-        let resObj = {
-            success: false,
-            message: 'Unknown error',
-            data: null
-        }
-        try {
-
-            // console.log('New user data:', newUser);
-            // dummy 2s delay to show loading
-            // await new Promise(res => setTimeout(res, 2000));
-
-            const response = await saCreateItem({
-                collection: 'users',
-                data: {
-                    first_name: newUser.first_name,
-                    last_name: newUser.last_name,
-                    email: newUser.email,
-                    password: newUser.password,
-                    users_and_accounts: {
-                        create: {
-                            account_id: account?.id,
-                            role: newUser.role || 'admin'
-                        }
-                    }
-                }
-            })
-
-            console.log('Create user response:', response);
-            resObj = response;
-            if (response.success) {
-                //add to users list
-                setUsers(prev => [...prev, response.data]);
-            }
-
-
-            return resObj;
-
-        } catch (error) {
-            console.error('Error creating new user: ', error);
-            resObj.message = error.message || 'Error creating user';
-            return resObj;
-        }
-    };
-    const handleUpdateUser = async (data) => {
-        let resObj = {
-            success: false,
-            message: 'Unknown error',
-            data: null
-        }
-        try {
-            console.log('Update user data:', data);
-
-            const userId = data.id;
-            const response = await saUpdateItem({
-                collection: 'users',
-                query: {
-                    where: { id: data.id },
-                    data: {
-                        first_name: data.first_name,
-                        last_name: data.last_name,
-                        email: data.email,
-                        // role: data.role
-                    }
-                }
-            });
-
-            if (response.success) {
-                // update users list
-                setUsers(prev => prev.map(user => user.id === userId ? response.data : user));
-            }
-
-            resObj = response;
-            return resObj;
-
-        } catch (error) {
-            console.error('Error editing user: ', error);
-            resObj.message = error.message || 'Error editing user';
-            return resObj;
-        }
-    };
-    const handleDeleteUser = async (data) => {
-        let resObj = {
-            success: false,
-            message: 'Unknown error',
-            data: null
-        }
-        try {
-            console.log('Delete user data:', data);
-
-            const userId = data.id;
-            const response = await saDeleteItem({
-                collection: 'users',
-                query: {
-                    where: { id: userId }
-                }
-            });
-
-            if (response.success) {
-                // remove from users list
-                setUsers(prev => prev.filter(user => user.id !== userId));
-            }
-
-            resObj = response;
-            return resObj;
-
-        } catch (error) {
-            console.error('Error deleting user: ', error);
-            resObj.message = error.message || 'Error deleting user';
-            return resObj;
-        }
-    };
 
 
     // fetch users
@@ -250,62 +184,22 @@ export default function Settings({ params, pathname, searchParams, session, user
         async function body() {
             try {
                 setIsLoading(true);
-                let query = {
-                    where: {
-                        users_and_accounts: {
-                            some: {
-                                account_id: account.id, // or your accountId variable
-                            },
-                        },
-                    },
-                    include: {
-                        users_and_accounts: {
-                            include: {
-                                account: true,
-                            },
-                        },
-                    },
-                }
 
-                if (user.role !== 'owner') {
-                    query = {
+
+                const thisOrg = await saGetItem({
+                    collection: 'organizations',
+                    query: {
                         where: {
-                            id: user.id,
-                        },
-                        include: {
-                            users_and_accounts: {
-                                include: {
-                                    account: true,
-                                },
-                            },
+                            id: org.id
                         },
                     }
-                }
-
-                const usersRes = await saGetItems({
-                    collection: 'users',
-                    query: query
                 });
 
-                // console.log('Users fetched:', usersRes);
-
-                if (usersRes.success && usersRes.data) {
-                    const uData = usersRes.data.map(u => {
-                        //add role
-                        const role = u.users_and_accounts && u.users_and_accounts.length > 0
-                            ? u.users_and_accounts[0].role || 'admin'
-                            : 'admin';
-
-                        let d = { ...u, role };
-                        if (role === 'owner') {
-                            d.disabled = true;
-                        }
-                        return d;
-                    });
-                    console.log('Processed users:', uData);
-
-                    setUsers(uData);
+                if (thisOrg && thisOrg.success && thisOrg.data) {
+                    _setOrg(thisOrg.data);
                 }
+
+
 
             } catch (error) {
                 console.error('Error fetching users: ', error);
@@ -318,68 +212,70 @@ export default function Settings({ params, pathname, searchParams, session, user
 
 
 
-    // if typing removes errors if any
-    const str1 = Object.values(formData).join(', ');
-    useEffect(() => {
-        if (Object.keys(formErrors).length > 0) {
-            setFormErrors({});
-        }
-    }, [str1]);
+    // // if typing removes errors if any
+    // const str1 = Object.values(formData).join(', ');
+    // useEffect(() => {
+    //     if (Object.keys(formErrors).length > 0) {
+    //         setFormErrors({});
+    //     }
+    // }, [str1]);
+
+
+    // console.log('_org: ', _org);
 
 
 
     return (
         <div className="container-main flex flex-col gap-6">
-            <h1 className="text-2xl"> Settings  </h1>
+            {/* <h1 className="text-2xl">Settings </h1> */}
 
             {/* general inputs */}
-            <div className="card-1 flex flex-col gap-3">
-                <div className="flex flex-col md:flex-row gap-6 items-start justify-start ">
+            <div>
+                <h2 className="text-xl mb-2">Account </h2>
+                <div className="card-1 flex flex-col gap-3">
+                    <div className="md:flex-row gap-6 items-start justify-start ">
+                        <span>
+                            Account Id
+                        </span>
+                        <input
+                            type="text"
+                            className="form-control"
+                            value={account?.id || ''}
+                            disabled={true}
+                        />
+                    </div>
+                </div>
 
-                    <form className="w-full gap-3 flex flex-col " onSubmit={handleFirstForm}>
-                        <div className="w-full md:w-96 flex flex-col gap-3">
+            </div>
+
+            {/* Organization */}
+            <div>
+                <div className="card-1 flex flex-col gap-3">
+                    <div className="flex gap-3  items-center">
+                        <Building className="size-5" />
+                        <span className="text-xl">Organization</span>
+                    </div>
+                    <FormBuilder
+                        formData={_org}
+                        onSubmit={handleOrgUpdate}
+                        fields={[
                             {
-                                renderOrder.map((rowItems, idx) => {
-                                    const rowFields = fields.filter(f => rowItems.includes(f.name) && !f.hidden);
-                                    if (rowFields.length === 0) return null;
-                                    return (
-                                        <div key={idx} className="flex md:flex-row flex-col gap-4">
-                                            {rowFields.map((field, fIdx) => (
-                                                <div key={fIdx} className="form-group flex-1 relative ">
-                                                    <label htmlFor={field.name}>{field.label}</label>
-                                                    <div className="relative rounded-md">
-                                                        <input
-                                                            id={field.name}
-                                                            name={field.name}
-                                                            type={field.type}
-                                                            placeholder={field.placeholder}
-                                                            className={`form-control ${formErrors[field.name] ? 'border-red-400' : ''}`}
-                                                            required={field.required}
-                                                            onChange={handleInputChange}
-                                                            disabled={isLoading || field.disabled}
-                                                            value={formData[field.name] || ''}
-                                                        />
-                                                        {isLoading && <div className="animate-shimmer" />}
-
-                                                    </div>
-                                                    {formErrors[field.name] && (
-                                                        <p className="text-sm text-red-500 my-1 expanding">
-                                                            {formErrors[field.name]}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    );
-                                })
+                                name: 'id',
+                                label: 'Organization ID',
+                                placeholder: 'Enter organization ID',
+                                required: true,
+                                disabled: true,
+                            },
+                            {
+                                name: 'name',
+                                label: 'Organization Name',
+                                placeholder: 'Enter organization name',
+                                required: true,
                             }
-                        </div>
-                        <div className="flex items-center justify-end" type="submit">
-                            <button className="btn btn-primary w-24" disabled={isLoading}>
-                                Save
-                            </button>
-                        </div>
-                    </form>
+                        ]}
+
+
+                    />
                 </div>
             </div>
 
@@ -387,96 +283,184 @@ export default function Settings({ params, pathname, searchParams, session, user
             {/* webhooks */}
             {/* webhooks for sources and avatars */}
             <div className="card-1 ">
-                <h2 className="text-xl mb-4">
-                    Webhooks n8n
-                </h2>
-                <div className="flex flex-col gap-3">
-                    {/* {
-                        ['sources', 'avatars'].map((whType, idx) => {
-                            return (
-                                <div key={idx} className="flex flex-col gap-1">
-                                    <h4 className="font-semibold">{makeFirstLetterUppercase(whType)} Webhooks</h4>
-                                    <input
-                                        type="text"
-                                        className="form-control w-full md:w-10/12"
-                                        value={`https://crazy-webhook-n8n-cloud.frog.com/v1/webhooks/${whType}?account_id=${account?.id}&api_key=${account?.api_key}`}
-                                    />
-                                </div>
-                            );
-                        })
-                    } */}
-
-                    <FormBuilder
-                        formData={webhooksData}
-                        // renderOrder={[
-                        //     ['sources']
-                        //     ['avatars']
-                        // ]}
-                        fields={[
-                            {
-                                name: 'sources',
-                                label: 'Sources Webhook',
-                                placeholder: 'Enter your sources webhook URL',
-                                type: 'url',
-                                required: true,
-                                hidden: false,
-                                disabled: false,
-                                validator: 'url'
-                            },
-                            {
-                                name: 'avatars',
-                                label: 'Avatars Webhook',
-                                placeholder: 'Enter your avatars webhook URL',
-                                type: 'url',
-                                required: true,
-                                hidden: false,
-                                disabled: false,
-                                validator: 'url'
-                            }
-                        ]}
+                <div className="flex gap-3 items-center">
+                    <Image
+                        src={'/images/other/n8n-logo.svg'}
+                        alt={'n8n Logo'}
+                        width={40}
+                        height={40}
                     />
+                    <span className="text-xl">
+                        Webhooks n8n
+                    </span>
                 </div>
-
-            </div>
-
-            {/* users table */}
-            <div className="relative flex items-start justify-start flex-col gap-3 rounded-lg ">
-                <h2 className="text-xl">
-                    Users
-                </h2>
-                <Table
-                    pathname={pathname}
-                    className="card-1 w-full"
-                    editable={isOwner ? true : false}
-                    editableInline={false}
-                    allowAddNew={true}
-                    isUserTable={true}
-                    actions={['edit', 'delete']}
-                    columns={[
-                        // { key: 'id', title: 'ID', width: 'w-12', },
-                        { key: 'role', title: 'Role', width: 'w-16', required: true, disabled: true, defaultValue: 'admin' },
-                        { key: 'first_name', title: 'First Name', width: 'w-60', required: true },
-                        { key: 'last_name', title: 'Last Name', width: 'w-60', required: true },
-                        { key: 'email', title: 'Email', width: 'w-60', required: true },
-                        // {
-                        //     key: 'email', title: 'Email', width: 'w-60', required: true,
-                        //     Component: ({ value }) => <div className="lowercase bg-red-500">{value}</div>
-                        // },
-                    ]}
-                    data={users}
-                    onAddNew={handleNewUser}
-                    onRowChange={handleUpdateUser}
-                    onRowDelete={handleDeleteUser}
-                // data={[
-                //     { id: 1, name: 'John Doe', email: 'john@example.com' },
-                //     { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
-                //     { id: 3, name: 'Alice Johnson', email: 'alice@example.com' },
-                // ]}
+                <FormBuilder
+                    formData={_org.webhooks || {}}
+                    isLoading={isActionLoading}
+                    fields={
+                        webhookTypes.map(whType => ({
+                            name: whType,
+                            label: `${makeFirstLetterUppercase(whType)} Webhook`,
+                            placeholder: `Enter your ${whType} webhook URL`,
+                            type: 'url',
+                            required: true,
+                            hidden: false,
+                            disabled: false,
+                            validator: 'url'
+                        }))
+                    }
+                    onSubmit={(data) => {
+                        handleOrgUpdate({
+                            ..._org,
+                            webhooks: data
+                        });
+                        setIsPopupOpen(false);
+                    }}
                 />
 
-                {isLoading && <div className="animate-shimmer " />}
             </div>
 
+            {/* Blotato */}
+            <div className="card-1 flex flex-col gap-3">
+                <div className="flex gap-3 items-center">
+                    <Image
+                        src={'/images/other/blotato-logo.webp'}
+                        alt={'Blotato Logo'}
+                        width={40}
+                        height={40}
+                    />
+                    <span className="text-xl">Blotato</span>
+                </div>
+                <FormBuilder
+                    formData={_org.configs.blotato || {}}
+                    isLoading={isActionLoading}
+                    fields={[
+                        {
+                            name: 'apiKey',
+                            label: 'Blotato API key',
+                            placeholder: `Enter your blotato webhook URL`,
+                            required: true,
+                            hidden: false,
+                            disabled: false,
+                            validator: 'length'
+                        }
+                    ]}
+                    onSubmit={(data) => {
+                        handleOrgUpdate({
+                            ..._org,
+                            configs: {
+                                ..._org.configs,
+                                blotato: data
+                            }
+                        });
+                    }}
+                />
+            </div>
+
+            {/* ElevenLabs */}
+            <div className="card-1 flex flex-col gap-3">
+                <div className="flex gap-3 items-center">
+                    <Image
+                        src={'/images/other/elevenlabs-logo.png'}
+                        alt={'ElevenLabs Logo'}
+                        width={40}
+                        height={40}
+                    />
+                    <span className="text-xl">ElevenLabs</span>
+                </div>
+                <FormBuilder
+                    formData={_org.configs.elevenLabs || {}}
+                    isLoading={isActionLoading}
+                    fields={[
+                        {
+                            name: 'apiKey',
+                            label: 'ElevenLabs API key',
+                            placeholder: `Enter your elevenLabs API key`,
+                            required: true,
+                            hidden: false,
+                            disabled: false,
+                            validator: 'length'
+                        },
+                        {
+                            name: 'defaultVoiceId',
+                            label: 'ElevenLabs Default Voice ID',
+                            placeholder: `Enter your elevenLabs Default Voice ID`,
+                            required: true,
+                            hidden: false,
+                            disabled: false,
+                            validator: 'length'
+                        }
+                    ]}
+                    onSubmit={(data) => {
+                        handleOrgUpdate({
+                            ..._org,
+                            configs: {
+                                ..._org.configs,
+                                elevenLabs: data
+                            }
+                        });
+                    }}
+                />
+            </div>
+
+
+            {/* context */}
+            <div className="card-1 flex flex-col gap-3">
+                <div className="flex gap-3  items-center">
+                    <TextInitial className="size-5" />
+                    <span className="text-xl">Default creation context</span>
+                </div>
+                <FormBuilder
+                    formData={_org.configs || {}}
+                    isLoading={isActionLoading}
+                    fields={[
+                        {
+                            name: 'language',
+                            label: 'Preferred language',
+                            type: 'select',
+                            options: [
+                                { value: 'en', label: 'English' },
+                                { value: 'es', label: 'Spanish' },
+                                { value: 'fr', label: 'French' },
+                                { value: 'de', label: 'German' },
+                            ]
+                        },
+                        {
+                            name: 'context',
+                            label: 'Default creation context',
+                            type: 'textarea',
+                            placeholder: `Enter your default creation context`,
+                            required: true,
+                            validatorKey: 'length'
+                        },
+                        {
+                            name: 'targetAudience',
+                            label: 'Target audience',
+                            type: 'textarea',
+                            placeholder: `Enter your target audience (persona description; optional)`,
+                            required: true,
+                            validatorKey: 'length'
+                        },
+
+                    ]}
+                    onSubmit={(data) => {
+                        let newOrg = { ..._org };
+                        newOrg.configs = newOrg.configs || {};
+                        newOrg.configs.language = data.language;
+                        newOrg.configs.context = data.context;
+                        newOrg.configs.targetAudience = data.targetAudience;
+                        handleOrgUpdate(newOrg);
+                    }}
+                />
+            </div>
+
+
+
+
+
+
+            {/* <PopupModal isOpen={isPopupOpen} onClose={() => { setIsPopupOpen(!isPopupOpen) }}>
+            </PopupModal> */}
         </div>
     );
 }

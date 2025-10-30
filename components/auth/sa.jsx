@@ -246,67 +246,81 @@ const handleSignup = async (formData) => {
         }
 
         // check if user with email already exists
-        const existingUserRes = await Prisma.users.findMany({
+        const existingUserRes = await Prisma.users.findFirst({
             where: {
                 email: formData.email
             }
         });
+
+
         const email = formData.email.toLowerCase().trim();
 
-        if (existingUserRes && existingUserRes.length) {
+        if (existingUserRes) {
             resObj.message = 'User with this email already exists.';
             return resObj;
         }
 
         const hashedPassword = bcrypt.hashSync(formData.password, 10);
 
-        const account = Prisma.accounts.create({
-            data: {
-                name: formData.accountName || `${formData.firstName} ${formData.lastName}'s Account`,
-                status: 'active',
-            }
-        });
 
-        const utcNow = new Date().toISOString();
+
         const result = await Prisma.$transaction(async (prisma) => {
+            // Create account first
             const newAccount = await prisma.accounts.create({
                 data: {
-                    id: nanoid(),
                     name: 'Default Account',
-                    created_at: utcNow,
-                    updated_at: utcNow,
                 },
             });
+
+            // Create default organization
+            const newOrganization = await prisma.organizations.create({
+                data: {
+                    name: 'Default Organization',
+                    description: 'Default organization for new account',
+                    account_id: newAccount.id,
+                },
+            });
+
+            // Create user with relation to account
             const newUser = await prisma.users.create({
                 data: {
-                    id: nanoid(),
-                    status: 'pending',
+                    status: 'active',
                     email: email,
                     password: hashedPassword,
                     first_name: formData.firstName,
                     last_name: formData.lastName,
                     provider: provider,
-                    created_at: utcNow,
-                    updated_at: utcNow,
-                    users_and_accounts: {
+                    accounts: {
                         create: {
-                            id: nanoid(),
-                            role: 'owner',
+                            role: 'superAdmin',
                             account_id: newAccount.id,
-                            created_at: utcNow,
-                            updated_at: utcNow,
+                        },
+                    },
+                    orgs: {
+                        create: {
+                            role: 'superAdmin',
+                            org_id: newOrganization.id,
                         },
                     },
                 },
                 include: {
-                    users_and_accounts: true,
+                    accounts: {
+                        include: {
+                            account: true,
+                        },
+                    },
+                    orgs: {
+                        include: {
+                            org: true,
+                        },
+                    },
                 },
             });
 
-            return { newUser, newAccount };
+            return { newUser, newAccount, newOrganization };
         });
 
-        const { newUser, newAccount } = result;
+        const { newUser, newAccount, newOrganization } = result;
 
         // console.log('result ==> ', result);
 
@@ -323,29 +337,35 @@ const handleSignup = async (formData) => {
             return resObj;
         }
 
+        if (!newOrganization) {
+            resObj.success = false;
+            resObj.message = 'Organization creation failed';
+            return resObj;
+        }
+
         // console.log('handleSignup accountRes  ==> ', accountRes);
         // console.log('handleSignup userRes  ==> ', userRes);
 
         // If user creation successful, create M2M relationship
-        if (newAccount && newUser) {
+        if (newAccount && newUser && newOrganization) {
 
             const token = jwt.sign({ id: newUser.id, email: newUser.email }, JWT_SECRET, { expiresIn: '1d' });
             const activateLink = `${DOMAIN}/auth/verify?token=${token}`;
-            sendEmail({
-                sendTo: newUser.email,
-                title: 'Please confirm your email',
-                subject: 'Thank you for signing up !',
-                elements: [
-                    `<p>Thank you for signing up !</p>`,
-                    `<p>Please confirm your email by clicking the button below to activate your account</p>`,
-                    `<p></p>`,
-                    `<a href="${activateLink}" style="background-color: #fac114; color: black; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">Activate Account</a>`,
-                    `<p></p>`,
-                    `<p>Link is active for 2 days</p>`,
-                    `<p></p>`,
-                    `<p></p>`,
-                ]
-            })
+            // sendEmail({
+            //     sendTo: newUser.email,
+            //     title: 'Please confirm your email',
+            //     subject: 'Thank you for signing up !',
+            //     elements: [
+            //         `<p>Thank you for signing up !</p>`,
+            //         `<p>Please confirm your email by clicking the button below to activate your account</p>`,
+            //         `<p></p>`,
+            //         `<a href="${activateLink}" style="background-color: #fac114; color: black; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">Activate Account</a>`,
+            //         `<p></p>`,
+            //         `<p>Link is active for 2 days</p>`,
+            //         `<p></p>`,
+            //         `<p></p>`,
+            //     ]
+            // })
 
 
             resObj.success = true;
@@ -358,7 +378,14 @@ const handleSignup = async (formData) => {
                 status: newUser.status,
                 createdAt: newUser.created_at,
                 updatedAt: newUser.updated_at,
-                accounts: [newAccount],
+                accounts: newUser.accounts.map(ua => ({
+                    ...ua.account,
+                    role: ua.role,
+                })),
+                organizations: newUser.orgs.map(uo => ({
+                    ...uo.org,
+                    role: uo.role,
+                })),
             };
 
         }

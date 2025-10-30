@@ -8,11 +8,11 @@ import allTypes from "@/data/types";
 import StatusItem from "@/components/other/statusItem";
 import SourceTypeItem, { getTypeFromUrl } from "@/components/other/sourceTypeItem";
 
-export default function Sources({ pathname, user, account, session, org }) {
+export default function Avatars({ pathname, user, account, session, org }) {
 
 
 
-    const collectionName = 'sources';
+    const collectionName = 'avatars';
     const [isLoading, setIsLoading] = useState(true);
     const [_data, _setData] = useState([]);
 
@@ -32,7 +32,7 @@ export default function Sources({ pathname, user, account, session, org }) {
                 data: item
             });
 
-            // console.log(`Response from adding new ${collectionName}: `, response);
+            console.log(`Response from adding new ${collectionName}: `, response);
             if (response && response.success) {
                 _setData(prev => [...prev, response.data]);
                 // notify({ type: 'success', message: 'Sources created successfully' });
@@ -54,7 +54,6 @@ export default function Sources({ pathname, user, account, session, org }) {
             return resObj;
         }
     };
-
     const handleUpdateItem = async (item) => {
         let resObj = {
             success: false,
@@ -96,7 +95,6 @@ export default function Sources({ pathname, user, account, session, org }) {
             return resObj;
         }
     };
-
     const handleDeleteItem = async (item) => {
         let resObj = {
             success: false,
@@ -132,7 +130,6 @@ export default function Sources({ pathname, user, account, session, org }) {
             return resObj;
         }
     };
-
     // initial load, fetch data
     useEffect(() => {
         const body = async () => {
@@ -168,13 +165,31 @@ export default function Sources({ pathname, user, account, session, org }) {
         body();
     }, []);
 
-
     // console.log('_data: ',_data);
+
+
+    // model avatars {
+    //   id                 String @id @default (cuid())
+    //   name               String
+    //   tone               String
+    //   notes              String ?
+    //             configs            Json ? @default ("{}")
+    //   elvenlabs_voice_id String ?
+    //             created_at         DateTime @default (now())
+    //   updated_at         DateTime @updatedAt
+
+    //   org_id String
+    //   org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+    //         @@index([name])
+    //     }
+
+
 
     return (
         <div className="container-main w-full flex flex-col gap-6">
             <h1 className="text-2xl flex items-center gap-2">
-                Sources
+                Avatars
             </h1>
 
 
@@ -204,71 +219,26 @@ export default function Sources({ pathname, user, account, session, org }) {
                             validateKey: 'length',
                         },
                         {
-                            key: 'status',
-                            type: 'select',
-                            title: 'Status',
+                            key: 'tone',
+                            title: 'Tone',
                             width: 'w-48',
                             required: true,
-                            disabled: true,
-                            defaultValue: allTypes[collectionName].options[0],
-                            options: allTypes[collectionName].options,
-                            Component: (props) => {
-                                // console.log('props: ', props);
-                                const { value } = props;
-                                return <StatusItem
-                                    status={value}
-                                />
-                            },
-                        },
-                        {
-                            key: 'type',
-                            title: 'Type',
-                            width: 'w-48',
-                            required: true,
-                            disabled: true,
-                            defaultValue: 'n/a',
-                            func: (data) => {
-                                return getTypeFromUrl(data.url);
-                            },
-                            Component: (props) => {
-                                // console.log('type props: ', props);
-                                return <SourceTypeItem
-                                    type={props.value}
-                                    data={props.row}
-                                />
-                            },
-                        },
-                        {
-                            key: 'url',
-                            title: 'URL',
-                            width: 'w-48',
-                            required: false,
-                            validateKey: 'url',
-                        },
-                        {
-                            key: 'fixed_idea',
-                            type: 'textarea',
-                            title: 'Fixed Idea',
-                            width: 'w-48',
-                            required: false,
                             validateKey: 'length',
                         },
                         {
-                            key: 'idea_inspiration',
+                            key: 'notes',
+                            title: 'Notes',
                             type: 'textarea',
-                            title: 'Idea Inspiration',
                             width: 'w-48',
-                            required: false,
+                            required: true,
                             validateKey: 'length',
                         },
                         {
-                            key: 'text',
-                            type: 'textarea',
-                            title: 'Text (Output)',
+                            key: 'elvenlabs_voice_id',
+                            title: 'Elvenlabs Voice ID',
                             width: 'w-48',
-                            required: false,
-                            disabled: true,
-                            // validateKey: 'length',
+                            required: true,
+                            validateKey: 'length',
                         },
                     ]}
                     data={_data}

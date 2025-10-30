@@ -2,8 +2,7 @@
 
 import { serverSubmit } from "@/components/auth/sa";
 import SigninEl from "@/components/auth/signinEl";
-import SignoutEl from "@/components/auth/signoutEl";
-import { GridPattern } from "@/components/other/grid";
+import SignoutEl from "@/components/auth/signoutEl"; 
 import Tabs, { TabTrigger } from "@/components/other/tabs";
 import { notify } from "@/components/sonnar/sonnar";
 import TurnstileEl from "@/components/turnstile";
@@ -376,8 +375,8 @@ export default function AuthEl({ type = 'signin', pathname, searchParams }) {
                             <div className="grid grid-cols-2 gap-3 mt-2">
                                 {authProviders.map((provider, index) => (
                                     <div key={index} className={`
-                                flex items-center gap-2 justify-center cursor-pointer border border-gray-300 shadow-sm p-2 rounded-md 
-                                ${!provider.enabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 transition'}
+                                flex items-center gap-2 justify-center border border-gray-300 shadow-sm p-2 rounded-md 
+                                ${!provider.enabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-100 transition'}
                                 `}>
                                         <Image width={40} height={40} src={provider.icon} alt={provider.name} className="h-6 w-6" />
                                         <span className="text-sm">{provider.name}</span>

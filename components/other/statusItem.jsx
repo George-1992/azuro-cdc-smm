@@ -1,7 +1,7 @@
 export default function StatusItem({ status }) {
     return (
         <div className={`p-1 rounded-md
-            ${status === 'completed' ? 'bg-green-200 text-green-800' : ''}
+            ${status === 'processed' ? 'bg-green-200 text-green-800' : ''}
             ${status === 'inactive' ? 'bg-gray-200 text-gray-800' : ''}
             ${status === 'pending' ? 'bg-yellow-200 text-yellow-800' : ''}
             ${status === 'failed' ? 'bg-red-200 text-red-800' : ''}

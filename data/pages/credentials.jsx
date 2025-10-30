@@ -4,15 +4,23 @@ import { saCreateItem, saDeleteItem, saGetItems, saUpdateItem } from "@/componen
 import { notify } from "@/components/sonnar/sonnar";
 import Table from "@/components/table";
 import { useState, useEffect } from "react";
+import {
+    Copy, Check,
+    Component,
+    Key,
+    KeyRoundIcon,
+    StretchVerticalIcon,
+    BoxesIcon
+} from "lucide-react";
+import { makeFirstLetterUppercase, toDisplayStr } from "@/utils/other";
 import allTypes from "@/data/types";
 import StatusItem from "@/components/other/statusItem";
 import SourceTypeItem, { getTypeFromUrl } from "@/components/other/sourceTypeItem";
+import Image from "next/image";
 
-export default function Sources({ pathname, user, account, session, org }) {
+export default function Credentials({ pathname, user, account, session }) {
 
-
-
-    const collectionName = 'sources';
+    const collectionName = 'credentials';
     const [isLoading, setIsLoading] = useState(true);
     const [_data, _setData] = useState([]);
 
@@ -24,15 +32,14 @@ export default function Sources({ pathname, user, account, session, org }) {
         }
         try {
             // add account_id to item if you have account-based filtering
-            // item.account_id = account ? account.id : null;
-            item.org_id = org ? org.id : null;
+            item.account_id = account ? account.id : null;
 
             const response = await saCreateItem({
                 collection: collectionName,
                 data: item
             });
 
-            // console.log(`Response from adding new ${collectionName}: `, response);
+            console.log(`Response from adding new ${collectionName}: `, response);
             if (response && response.success) {
                 _setData(prev => [...prev, response.data]);
                 // notify({ type: 'success', message: 'Sources created successfully' });
@@ -142,8 +149,7 @@ export default function Sources({ pathname, user, account, session, org }) {
                     collection: collectionName,
                     query: {
                         where: {
-                            // account_id: account ? account.id : null,
-                            org_id: org ? org.id : null
+                            account_id: account ? account.id : null // uncomment if using account-based filtering
                         },
                         orderBy: {
                             created_at: 'desc'
@@ -174,7 +180,7 @@ export default function Sources({ pathname, user, account, session, org }) {
     return (
         <div className="container-main w-full flex flex-col gap-6">
             <h1 className="text-2xl flex items-center gap-2">
-                Sources
+                {toDisplayStr(collectionName)}
             </h1>
 
 
@@ -189,11 +195,7 @@ export default function Sources({ pathname, user, account, session, org }) {
                     previewKey="notes"
                     editRenderOrder={[
                         ['name'],
-                        ['status', 'type'],
-                        ['url'],
-                        ['fixed_idea'],
-                        ['idea_inspiration'],
-                        ['text'],
+                        ['api_key']
                     ]}
                     columns={[
                         {
@@ -202,73 +204,65 @@ export default function Sources({ pathname, user, account, session, org }) {
                             width: 'w-48',
                             required: true,
                             validateKey: 'length',
+                            Component: ({ value, row }) => {
+                                const isBlotato = value.toLowerCase().includes('blotato');
+                                const isElevenLabs = value.toLowerCase().includes('elevenlabs');
+
+
+                                // console.log('value, row: ', value, row);
+                                return <div className="flex items-center gap-1">
+                                    <div className="border w-12 h-[32px] rounded-md border-gray-300 flex items-center justify-center">
+                                        {(isBlotato || isElevenLabs)
+                                            ? <Image
+                                                src={isBlotato ? '/images/other/blotato-logo.webp' : '/images/other/elevenlabs-logo.png'}
+                                                alt={isBlotato ? 'Blotato Logo' : 'ElevenLabs Logo'}
+                                                width={40}
+                                                height={40}
+                                            />
+                                            : <BoxesIcon className="size-6" />
+                                        }
+                                    </div>
+                                    <span> {value}</span>
+                                </div>
+                            },
+                            EditComponent: ({ value, row, onChange }) => {
+                                // console.log('value, row, onChange: ', value, row, onChange);
+
+                                const isBlotato = value.toLowerCase().includes('blotato');
+                                const isElevenLabs = value.toLowerCase().includes('elevenlabs');
+
+                                return (
+                                    <div className="flex items-center gap-1">
+                                        <div className="border w-12 h-[37px] rounded-md border-gray-300 flex items-center justify-center">
+                                            {(isBlotato || isElevenLabs)
+                                                ? <Image
+                                                    src={isBlotato ? '/images/other/blotato-logo.webp' : '/images/other/elevenlabs-logo.png'}
+                                                    alt={isBlotato ? 'Blotato Logo' : 'ElevenLabs Logo'}
+                                                    width={40}
+                                                    height={40}
+                                                />
+                                                : <BoxesIcon className="size-6" />
+                                            }
+                                        </div>
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            className="form-control"
+                                            value={value}
+                                            onChange={onChange}
+                                        />
+
+                                    </div>
+                                )
+                            },
                         },
                         {
-                            key: 'status',
-                            type: 'select',
-                            title: 'Status',
+                            key: 'api_key',
+                            title: 'API Key',
                             width: 'w-48',
                             required: true,
-                            disabled: true,
-                            defaultValue: allTypes[collectionName].options[0],
-                            options: allTypes[collectionName].options,
-                            Component: (props) => {
-                                // console.log('props: ', props);
-                                const { value } = props;
-                                return <StatusItem
-                                    status={value}
-                                />
-                            },
-                        },
-                        {
-                            key: 'type',
-                            title: 'Type',
-                            width: 'w-48',
-                            required: true,
-                            disabled: true,
-                            defaultValue: 'n/a',
-                            func: (data) => {
-                                return getTypeFromUrl(data.url);
-                            },
-                            Component: (props) => {
-                                // console.log('type props: ', props);
-                                return <SourceTypeItem
-                                    type={props.value}
-                                    data={props.row}
-                                />
-                            },
-                        },
-                        {
-                            key: 'url',
-                            title: 'URL',
-                            width: 'w-48',
-                            required: false,
-                            validateKey: 'url',
-                        },
-                        {
-                            key: 'fixed_idea',
-                            type: 'textarea',
-                            title: 'Fixed Idea',
-                            width: 'w-48',
-                            required: false,
+                            // hidden: false,
                             validateKey: 'length',
-                        },
-                        {
-                            key: 'idea_inspiration',
-                            type: 'textarea',
-                            title: 'Idea Inspiration',
-                            width: 'w-48',
-                            required: false,
-                            validateKey: 'length',
-                        },
-                        {
-                            key: 'text',
-                            type: 'textarea',
-                            title: 'Text (Output)',
-                            width: 'w-48',
-                            required: false,
-                            disabled: true,
-                            // validateKey: 'length',
                         },
                     ]}
                     data={_data}

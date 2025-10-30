@@ -7,7 +7,7 @@ import ToasterSonnar from "@/components/sonnar/sonnar";
 import { getCookie, getSession } from "@/components/auth/helper";
 import Sidebar from "@/components/navbars/sidebar";
 import TopNav from "@/components/navbars/top";
-import { saGetItem } from "@/components/serverActions.jsx";
+import { saGetItem, saGetItems } from "@/components/serverActions.jsx";
 import AccountMessages from "@/components/other/accountMessages";
 import { SignoutEl } from "@/components/auth";
 import ExtenSession from "@/components/auth/extenSession";
@@ -50,6 +50,8 @@ export default async function PageWrapper({ children, params, searchParams }) {
     const session = await getSession();
     let user = null;
     let account = null;
+    let orgs = null;
+    let org = null;
     // console.log('PageWrapper session ==> ', session);
 
 
@@ -61,26 +63,75 @@ export default async function PageWrapper({ children, params, searchParams }) {
         } else {
             try {
                 // allow
-                const userAndAccount = await saGetItem({
+                const getAllOrgs = async (accountId) => {
+                    const d = await saGetItems({
+                        collection: 'organizations',
+                        query: {
+                            where: {
+                                account_id: accountId
+                            }
+                        }
+                    });
+
+                    return d?.data
+                };
+
+                const userDataRes = await saGetItem({
                     collection: 'users',
                     query: {
                         where: { id: session.id },
                         include: {
-                            users_and_accounts: {
+                            orgs: {
+                                include: {
+                                    org: true
+                                }
+                            },
+                            accounts: {
                                 include: {
                                     account: true
                                 }
-                            }
+                            },
                         }
                     }
                 })
-                if (userAndAccount && userAndAccount.success && userAndAccount.data) {
-                    account = userAndAccount.data.users_and_accounts[0].account;
-                    user = { ...userAndAccount.data };
-                    delete user.users_and_accounts;
-                    user.role = userAndAccount.data.users_and_accounts[0].role || 'user';
+                // console.log('userDataRes: ', userDataRes?.data?.orgs);
+
+
+                // set user, account, orgs, org
+                if (userDataRes && userDataRes.success && userDataRes.data) {
+                    user = userDataRes.data;
+                    account = user.accounts && user.accounts[0]
+                        ? user.accounts[0].account
+                        : null;
+                    user.role = user.accounts[0].role;
+                    delete user.accounts;
+
+                    if (user.role === 'superAdmin') {
+                        //if superAdmin get all orgs
+                        orgs = await getAllOrgs(account.id);
+
+                    } else {
+                        //if not superAdmin get only assigned orgs
+                        orgs = user.orgs ?
+                            user.orgs.map(uo => uo.org)
+                            : [];
+                    }
                 }
-                // console.log('userAndAccount ==> ', userAndAccount.data);
+                // console.log('account ==> ', account);
+                // console.log('user ==> ', user);
+
+
+                // if if org_id is in cookies then set org
+                const orgIdCookie = await getCookie('org_id');
+                if (orgIdCookie) {
+                    org = orgs.find(o => o.id === orgIdCookie);
+                } else {
+                    // else set to first org if exists
+                    org = orgs[0];
+                }
+
+                // console.log('org ==> ', org);
+
 
             } catch (error) { console.error('PageWrapper ERROR : ', error); }
         }
@@ -138,11 +189,11 @@ export default async function PageWrapper({ children, params, searchParams }) {
                 <div className="page-wrapper w-full min-h-screen overflow-hidden">
                     <div className="flex w-full h-screen overflow-hidden">
                         {session &&
-                            <Sidebar pathname={pathname} searchParams={searchParams} session={session} user={user} account={account} />
+                            <Sidebar pathname={pathname} searchParams={searchParams} session={session} user={user} account={account} orgs={orgs} org={org} />
                         }
                         <div className={`h-full flex flex-col ${session ? 'w-[calc(100%-var(--sidebar-width))]' : 'w-full'} transition-all duration-300 overflow-hidden`}>
-                            {session && <AccountMessages pathname={pathname} searchParams={searchParams} session={session} user={user} account={account} />}
-                            {session && <TopNav pathname={pathname} searchParams={searchParams} session={session} user={user} account={account} />}
+                            {session && <AccountMessages pathname={pathname} searchParams={searchParams} session={session} user={user} account={account} orgs={orgs} org={org} />}
+                            {session && <TopNav pathname={pathname} searchParams={searchParams} session={session} user={user} account={account} orgs={orgs} org={org} />}
                             <div className="flex-1 overflow-auto min-h-0">
                                 {isPageMap
                                     ? <PageComp
@@ -152,6 +203,7 @@ export default async function PageWrapper({ children, params, searchParams }) {
                                         session={session}
                                         user={user}
                                         account={account}
+                                        orgs={orgs} org={org}
                                     />
                                     : children
                                         ? children
@@ -173,7 +225,7 @@ export default async function PageWrapper({ children, params, searchParams }) {
                     </div>
                 </div>
                 <ToasterSonnar />
-                <ExtenSession session={session} pathname={pathname} />
+                <ExtenSession session={session} pathname={pathname} orgs={orgs} org={org} />
             </body>
         </html>
     );

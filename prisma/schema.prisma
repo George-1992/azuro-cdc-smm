@@ -13,16 +13,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  superAdmin
+  member
+}
+
+// top-level tenant
 model accounts {
   id         String   @id @default(uuid())
   name       String   @default("Default Account")
-  status     String?  @default("inactive")
+  status     String?  @default("active")
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  users_and_accounts users_and_accounts[]
-  sources            sources[]
-  webhooks           webhooks[]
+  // Relations
+  users         users_and_accounts[]
+  organizations organizations[]
 
   @@index([name])
   @@index([status])
@@ -30,7 +36,7 @@ model accounts {
 
 model users {
   id         String   @id @default(cuid())
-  status     String?  @default("pending")
+  status     String?  @default("active")
   email      String   @unique
   first_name String?  @default("")
   last_name  String?  @default("")
@@ -39,28 +45,69 @@ model users {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  users_and_accounts users_and_accounts[]
+  // Relations
+  accounts users_and_accounts[]
+  orgs     users_in_organizations[]
 
   @@index([email])
   @@index([status])
   @@index([provider])
-  @@index([first_name])
-  @@index([last_name])
 }
 
 model users_and_accounts {
   id         String   @id @default(cuid())
-  role       String
+  role       Role     @default(member) // e.g. "superAdmin" |  "member"
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   account_id String
-  account    accounts @relation(fields: [account_id], references: [id])
+  account    accounts @relation(fields: [account_id], references: [id], onDelete: Cascade)
   user_id    String
-  user       users    @relation(fields: [user_id], references: [id])
+  user       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([account_id, user_id])
   @@index([account_id])
+  @@index([user_id])
+  @@index([role])
+}
+
+model organizations {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+
+  webhooks Json? @default("{}")
+  configs  Json? @default("{}")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Ownership
+  account_id String
+  account    accounts @relation(fields: [account_id], references: [id], onDelete: Cascade)
+
+  // Users inside the org
+  users   users_in_organizations[]
+  sources sources[]
+  avatars avatars[]
+
+  @@index([name])
+  @@index([account_id])
+}
+
+model users_in_organizations {
+  id         String   @id @default(cuid())
+  role       String // e.g.  "superAdmin" |  "member"
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  org_id  String
+  org     organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  user_id String
+  user    users         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([org_id, user_id])
+  @@index([org_id])
   @@index([user_id])
   @@index([role])
 }
@@ -78,22 +125,27 @@ model sources {
   config           Json?    @default("{}")
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
-  account_id       String
-  account          accounts @relation(fields: [account_id], references: [id])
+
+  org_id String
+  org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@index([name])
   @@index([type])
   @@index([status])
 }
 
-model webhooks {
-  id         String   @id @default(cuid())
-  name       String
-  url        String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  account_id String
-  account    accounts @relation(fields: [account_id], references: [id])
+model avatars {
+  id                 String   @id @default(cuid())
+  name               String
+  tone               String
+  notes              String?
+  configs            Json?    @default("{}")
+  elvenlabs_voice_id String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  org_id String
+  org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@index([name])
 }

@@ -1,7 +1,15 @@
 const allTypes = {
     sources: {
-        options: ['processing', 'completed', 'failed'],
+        options: [
+            // 'pending',
+            'processing', 'processed', 'failed'
+        ],
     }
 }
+
+export const webhookTypes = [
+    'sources',
+    'avatars',
+]
 
 export default allTypes;

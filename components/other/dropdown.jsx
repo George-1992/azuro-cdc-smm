@@ -132,9 +132,9 @@ export const Dropdown = ({
     };
 
     return (
-        <div className="relative inline-block">
+        <div className={`relative inline-block ${className}`}>
             <button
-                className=''
+                className={Trigger.props.className || ''}
                 onClick={handleTriggerClick}
                 data-dropdown-trigger="true"
             >

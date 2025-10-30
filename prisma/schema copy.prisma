@@ -1,0 +1,116 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model accounts {
+  id         String   @id @default(uuid())
+  name       String   @default("Default Account")
+  status     String?  @default("inactive")
+  webhooks   Json?    @default("{}")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  users_and_accounts users_and_accounts[]
+  sources            sources[]
+  credentials        credentials[]
+  organizations      organizations[]
+
+  @@index([name])
+  @@index([status])
+}
+
+model users {
+  id         String   @id @default(cuid())
+  status     String?  @default("active")
+  email      String   @unique
+  first_name String?  @default("")
+  last_name  String?  @default("")
+  password   String?
+  provider   String?  @default("email")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  users_and_accounts users_and_accounts[]
+
+  @@index([email])
+  @@index([status])
+  @@index([provider])
+  @@index([first_name])
+  @@index([last_name])
+}
+
+model users_and_accounts {
+  id         String   @id @default(cuid())
+  role       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  account_id String
+  account    accounts @relation(fields: [account_id], references: [id])
+  user_id    String
+  user       users    @relation(fields: [user_id], references: [id])
+
+  @@unique([account_id, user_id])
+  @@index([account_id])
+  @@index([user_id])
+  @@index([role])
+}
+
+model organizations {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  account_id  String
+  account     accounts @relation(fields: [account_id], references: [id])
+
+  @@index([name])
+}
+
+model sources {
+  id               String   @id @default(cuid())
+  name             String
+  status           String   @default("processing")
+  type             String
+  fixed_idea       String?
+  idea_inspiration String?
+  url              String?
+  text             String?
+  internal_note    String?
+  config           Json?    @default("{}")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  account_id       String
+  account          accounts @relation(fields: [account_id], references: [id])
+
+  @@index([name])
+  @@index([type])
+  @@index([status])
+}
+
+model credentials {
+  id          String   @id @default(cuid())
+  name        String
+  api_key     String
+  description String?
+  notes       String?
+  config      Json?    @default("{}")
+  account_id  String
+  account     accounts @relation(fields: [account_id], references: [id])
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([name])
+}
