@@ -194,6 +194,7 @@ export default function Sources({ pathname, user, account, session, org }) {
                         ['fixed_idea'],
                         ['idea_inspiration'],
                         ['text'],
+                        ['text_output'],
                     ]}
                     columns={[
                         {
@@ -263,6 +264,15 @@ export default function Sources({ pathname, user, account, session, org }) {
                         },
                         {
                             key: 'text',
+                            type: 'textarea',
+                            title: 'Text (Raw Input/source)',
+                            width: 'w-48',
+                            required: false,
+                            disabled: false,
+                            // validateKey: 'length',
+                        },
+                        {
+                            key: 'text_output',
                             type: 'textarea',
                             title: 'Text (Output)',
                             width: 'w-48',

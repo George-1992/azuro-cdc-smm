@@ -320,6 +320,32 @@ export const Table = ({
     };
     const minTableWidth = calculateMinWidth();
 
+
+
+    const getCellVal = (key, column, row) => {
+        try {
+            // console.log('key: ', key, column.options);
+
+            if (column.options && column.options.length > 0) {
+                const option = column.options.find(opt => opt.value === row[key]);
+                if (option) {
+                    return option.label || option.label
+                }
+            }
+
+            return typeof row[key] === 'string'
+                ? row[key]
+                : JSON.stringify(row[key]);
+
+            // const val = row[key];
+            // return typeof val === 'string' ? val : JSON.stringify(val);
+        } catch (error) {
+            console.error('Error getting cell value:', error);
+            return 'errored';
+        }
+    };
+
+
     // search, sort, data change
     useEffect(() => {
         let filteredData = data;
@@ -389,9 +415,12 @@ export const Table = ({
         }
     }, [data]);
 
-
-
-
+    // update on columns change
+    useEffect(() => {
+        if (!isEqual(columns, _columns)) {
+            _setColumns(columns);
+        }
+    }, [columns]);
 
     // console.log('Table _editingItem: ', _editingItem);
     // // console.log('Table _editingCell: ', _editingCell);
@@ -554,11 +583,9 @@ export const Table = ({
                                                                         row={row} rowIndex={rowIndex} column={column}
                                                                         users={users} leads={leads}
                                                                     />
-                                                                ) : column.type === 'date' ? (
-                                                                    <DateDisplay date={row[column.key]} format="short" className="text-gray-700" />
-                                                                ) : (
-                                                                    val
-                                                                )
+                                                                ) : column.type === 'date'
+                                                                    ? <DateDisplay date={row[column.key]} format="short" className="text-gray-700" />
+                                                                    : <>{getCellVal(column.key, column, row)}</>
                                                             }
                                                         </>
                                                     }

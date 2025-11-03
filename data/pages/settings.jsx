@@ -10,10 +10,10 @@ import { ExpandableModal, PopupModal } from "@/components/other/modals";
 import Table from "@/components/table";
 import { makeFirstLetterUppercase } from "@/utils/other";
 import FormBuilder from "@/components/formBuilder";
-import { webhookTypes } from "@/data/types";
+import { languageOptions, webhookTypes } from "@/data/types";
 import Image from "next/image";
 import { Building, TextInitial } from "lucide-react";
-
+import Timezones from "@/data/tomezones.json";
 
 
 export default function Settings({ params, pathname, searchParams, session, user, account, org, orgs }) {
@@ -271,6 +271,18 @@ export default function Settings({ params, pathname, searchParams, session, user
                                 label: 'Organization Name',
                                 placeholder: 'Enter organization name',
                                 required: true,
+                            },
+                            {
+                                name: 'timezone',
+                                label: 'Timezone',
+                                placeholder: 'Select timezone',
+                                required: true,
+                                type: 'select',
+                                searchable: true,
+                                options: Timezones.map(zone => ({
+                                    value: zone.zone,
+                                    label: `${zone.name} ${zone.gmt}`
+                                })),
                             }
                         ]}
 
@@ -418,12 +430,7 @@ export default function Settings({ params, pathname, searchParams, session, user
                             name: 'language',
                             label: 'Preferred language',
                             type: 'select',
-                            options: [
-                                { value: 'en', label: 'English' },
-                                { value: 'es', label: 'Spanish' },
-                                { value: 'fr', label: 'French' },
-                                { value: 'de', label: 'German' },
-                            ]
+                            options: languageOptions,
                         },
                         {
                             name: 'context',

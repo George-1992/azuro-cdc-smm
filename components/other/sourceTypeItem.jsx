@@ -12,14 +12,7 @@ export default function SourceTypeItem({ type, data }) {
 
     const src = getTypeFromUrl(data.url);
     // console.log('src: ', src);
-    let logoImgSrc = ''
-    if (src === 'youtube_creator') {
-        logoImgSrc = '/images/other/youtube-logo.png';
-    } else if (src === 'tiktok_creator') {
-        logoImgSrc = '/images/other/tiktok-logo.png';
-    } else if (src === 'instagram_creator') {
-        logoImgSrc = '/images/other/instagram_logo.svg';
-    }
+    let logoImgSrc = getSmUrl(src);
 
 
     return (
@@ -42,6 +35,25 @@ export default function SourceTypeItem({ type, data }) {
         </div>
     );
 }
+
+export const getSmUrl = (str) => {
+    let logoImgSrc = '';
+
+    try {
+        if (!str) return '';
+
+        if (str.includes('youtube') || str === 'youtube_creator') {
+            logoImgSrc = '/images/other/youtube-logo.png';
+        } else if (str.includes('tiktok') || str === 'tiktok_creator') {
+            logoImgSrc = '/images/other/tiktok-logo.png';
+        } else if (str.includes('instagram') || str === 'instagram_creator') {
+            logoImgSrc = '/images/other/instagram_logo.svg';
+        }
+    } catch (error) {
+        console.error('Error in getSmUrl:', error);
+    }
+    return logoImgSrc;
+};
 
 export const getTypeFromUrl = (url) => {
     try {

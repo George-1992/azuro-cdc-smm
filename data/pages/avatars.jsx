@@ -4,7 +4,7 @@ import { saCreateItem, saDeleteItem, saGetItems, saUpdateItem } from "@/componen
 import { notify } from "@/components/sonnar/sonnar";
 import Table from "@/components/table";
 import { useState, useEffect } from "react";
-import allTypes from "@/data/types";
+import allTypes, { avatarTones } from "@/data/types";
 import StatusItem from "@/components/other/statusItem";
 import SourceTypeItem, { getTypeFromUrl } from "@/components/other/sourceTypeItem";
 
@@ -204,11 +204,9 @@ export default function Avatars({ pathname, user, account, session, org }) {
                     previewKey="notes"
                     editRenderOrder={[
                         ['name'],
-                        ['status', 'type'],
-                        ['url'],
-                        ['fixed_idea'],
-                        ['idea_inspiration'],
-                        ['text'],
+                        ['tone'],
+                        ['notes'],
+                        ['elvenlabs_voice_id'],
                     ]}
                     columns={[
                         {
@@ -224,14 +222,8 @@ export default function Avatars({ pathname, user, account, session, org }) {
                             width: 'w-48',
                             required: true,
                             validateKey: 'length',
-                        },
-                        {
-                            key: 'notes',
-                            title: 'Notes',
-                            type: 'textarea',
-                            width: 'w-48',
-                            required: true,
-                            validateKey: 'length',
+                            type: 'select',
+                            options: avatarTones,
                         },
                         {
                             key: 'elvenlabs_voice_id',
@@ -240,6 +232,15 @@ export default function Avatars({ pathname, user, account, session, org }) {
                             required: true,
                             validateKey: 'length',
                         },
+                        {
+                            key: 'notes',
+                            title: 'Notes',
+                            type: 'textarea',
+                            width: 'w-48',
+                            required: false,
+                            validateKey: 'length',
+                        },
+
                     ]}
                     data={_data}
                     onAddNew={handleNewItem}

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Select from "@/components/select";
 import DateInput from "@/components/date";
 import NotesArray from "@/components/other/notesArray";
+import { cn } from "@/libs/utils";
 
 export default function FormBuilder({
     className = '',
@@ -59,6 +60,7 @@ export default function FormBuilder({
 
     const formSubmit = (e) => {
         try {
+            // console.log('Form submit e==> ', e);
             // console.log('Form submit disabled==> ', disabled);
 
             e.preventDefault();
@@ -92,6 +94,7 @@ export default function FormBuilder({
                     hasErrors = true;
                 }
             }
+            // console.log('Form submit newErrors==> ', newErrors);
 
             if (hasErrors) {
                 _setFormErrors(newErrors);
@@ -141,6 +144,7 @@ export default function FormBuilder({
 
     // console.log('FormBuilder renderOrder ==> ', _renderOrder);
     // console.log('_formData: ', _formData);
+    // console.log('_formData: ', _formData);
 
     return (
         <div className={className}>
@@ -154,8 +158,15 @@ export default function FormBuilder({
                             return (
                                 <div key={idx} className="flex md:flex-row flex-col gap-4">
                                     {rowFields.map((field, fIdx) => (
-                                        <div key={`fIdx-level1-${fIdx}`} className={`form-group flex-1 relative ${field.className || ''}`}>
-                                            <label htmlFor={field.name}>{field.label}</label>
+                                        <div key={`fIdx-level1-${fIdx}`} className={`form-group flex-1 relative flex flex-col${field.className || ''}`}>
+                                            <label
+                                                htmlFor={field.name}
+                                                className={cn(
+                                                    _formErrors[field.name] ? 'text-red-500' : '',
+                                                )}
+                                            >
+                                                {field.label}
+                                            </label>
 
                                             {field.EditComponent || field.Component
                                                 ? (field.EditComponent
@@ -305,7 +316,7 @@ export const FormItem = ({
 
 
     return (
-        <div className="form-group flex-1 relative ">
+        <div className="form-group flex-1 relative flex flex-col">
             <label htmlFor={label}>{label}</label>
             {componentType === 'input' && (
                 <input

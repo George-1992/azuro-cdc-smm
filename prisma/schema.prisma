@@ -75,6 +75,7 @@ model organizations {
   id          String  @id @default(cuid())
   name        String
   description String?
+  timezone    String? @default("UTC")
 
   webhooks Json? @default("{}")
   configs  Json? @default("{}")
@@ -87,9 +88,11 @@ model organizations {
   account    accounts @relation(fields: [account_id], references: [id], onDelete: Cascade)
 
   // Users inside the org
-  users   users_in_organizations[]
-  sources sources[]
-  avatars avatars[]
+  users          users_in_organizations[]
+  sources        sources[]
+  avatars        avatars[]
+  week_templates week_templates[]
+  campaigns      campaigns[]
 
   @@index([name])
   @@index([account_id])
@@ -121,14 +124,17 @@ model sources {
   idea_inspiration String?
   url              String?
   text             String?
+  text_output      String?
   internal_note    String?
   config           Json?    @default("{}")
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
-  org_id String
-  org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  org_id    String
+  org       organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  campaigns campaigns[]
 
+  @@index([org_id])
   @@index([name])
   @@index([type])
   @@index([status])
@@ -147,5 +153,58 @@ model avatars {
   org_id String
   org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
+  campaigns campaigns[]
+
+  @@index([org_id])
   @@index([name])
+}
+
+model week_templates {
+  id               String   @id @default(cuid())
+  name             String
+  weekday          String
+  time             Int
+  content_type     String
+  target_platforms Json     @default("[]")
+  description      String?
+  configs          Json?    @default("{}")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  org_id String
+  org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+  campaigns campaigns[]
+
+  @@index([org_id])
+  @@index([name])
+  @@index([weekday])
+  @@index([content_type])
+}
+
+model campaigns {
+  id                 String  @id @default(cuid())
+  name               String
+  status             String  @default("draft")
+  language           String? @default("en")
+  global_inspiration String?
+
+  avatar_id        String?
+  avatar           avatars?        @relation(fields: [avatar_id], references: [id], onDelete: Cascade)
+  source_id        String?
+  source           sources?        @relation(fields: [source_id], references: [id], onDelete: Cascade)
+  week_template_id String?
+  week_template    week_templates? @relation(fields: [week_template_id], references: [id], onDelete: Cascade)
+
+  scheduled_at DateTime?
+  published_at DateTime?
+
+  org_id String
+  org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([name])
+  @@index([status])
 }
