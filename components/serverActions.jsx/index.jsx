@@ -408,7 +408,7 @@ export const saSendEmail = async ({
 
 
 
-export const saCreatePublication = ({ data, org }) => {
+export const saCreatePublication = async ({ data, org }) => {
     let resObj = {
         success: false,
         warning: false,
@@ -421,9 +421,11 @@ export const saCreatePublication = ({ data, org }) => {
         toSaveData.org_id = org.id;
 
         // create publication
-        const createdPublication = Prisma.publications.create({
+        const createdPublication = await Prisma.publications.create({
             data: toSaveData
         });
+        // console.log('createdPublication: ',createdPublication);
+
         resObj.success = true;
         resObj.message = 'Publication created successfully';
         resObj.data = createdPublication;

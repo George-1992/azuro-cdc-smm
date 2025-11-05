@@ -504,7 +504,7 @@ export const Table = ({
                 <table className='table-fixed' style={{ minWidth: `${minTableWidth}px`, width: '100%' }}>
                     <thead className='border-b border-gray-200 bg-gray-50'>
                         <tr content=''>
-                            {actions && actions.length > 0 &&
+                            {editable && actions && actions.length > 0 &&
                                 <th>
                                     <div className='px-2 py-2 text-sm font-medium text-gray-500 flex justify-start'>
                                         Actions
@@ -548,7 +548,7 @@ export const Table = ({
                                 `}>
 
                                     {/* actions */}
-                                    {actions && actions.length > 0 && !row.disabled && editable &&
+                                    {editable && actions && actions.length > 0 && !row.disabled && editable &&
                                         <td>
                                             <div className='flex items-center gap-3 justify-start ml-2'>
                                                 {!isModified && actions && actions.length > 0 &&

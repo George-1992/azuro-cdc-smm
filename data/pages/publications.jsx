@@ -181,38 +181,38 @@ export default function Publications({ pathname, user, account, session, org }) 
     };
 
     // initial load, fetch data
-    // useEffect(() => {
-    //     const body = async () => {
-    //         try {
-    //             setIsLoading(true);
-    //             const response = await saGetItems({
-    //                 collection: collectionName,
-    //                 query: {
-    //                     where: {
-    //                         org_id: org ? org.id : null
-    //                     },
-    //                     orderBy: {
-    //                         created_at: 'desc'
-    //                     }
-    //                 }
-    //             });
+    useEffect(() => {
+        const body = async () => {
+            try {
+                setIsLoading(true);
+                const response = await saGetItems({
+                    collection: collectionName,
+                    query: {
+                        where: {
+                            org_id: org ? org.id : null
+                        },
+                        orderBy: {
+                            created_at: 'desc'
+                        }
+                    }
+                });
 
-    //             console.log(`Fetched ${collectionName}: `, response);
+                console.log(`Fetched ${collectionName}: `, response);
 
-    //             if (response && response.success) {
-    //                 _setData(response.data || []);
-    //             } else {
-    //                 notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
-    //             }
+                if (response && response.success) {
+                    _setData(response.data || []);
+                } else {
+                    notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
+                }
 
-    //         } catch (error) {
-    //             console.error(`Error fetching ${collectionName}: `, error);
-    //         } finally {
-    //             setIsLoading(false);
-    //         }
-    //     };
-    //     body();
-    // }, [org]);
+            } catch (error) {
+                console.error(`Error fetching ${collectionName}: `, error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        body();
+    }, [org]);
 
     return (
         <div className="container-main w-full flex flex-col gap-6">
@@ -224,7 +224,7 @@ export default function Publications({ pathname, user, account, session, org }) 
             <div className="w-full relative rounded-md overflow-x-auto">
                 <Table
                     className="card-1 min-w-full"
-                    editable={true}
+                    editable={false}
                     editableInline={true}
                     allowAddNew={true}
                     actions={['edit', 'delete', 'preview']}
@@ -259,6 +259,14 @@ export default function Publications({ pathname, user, account, session, org }) 
                             Component: StatusItem
                         },
                         {
+                            key: 'scheduled_at',
+                            title: 'Scheduled',
+                            width: 'w-40',
+                            type: 'datetime',
+                            placeholder: 'Select date & time',
+                            Component: ({ value }) => value ? <DateDisplay date={value} format="short" showTime={true} /> : <span className="text-gray-400">Not scheduled</span>
+                        },
+                        {
                             key: 'title',
                             title: 'Title',
                             width: 'w-64',
@@ -283,15 +291,6 @@ export default function Publications({ pathname, user, account, session, org }) 
                             validationKey: 'url',
                             rows: 2
                         },
-                        {
-                            key: 'scheduled_at',
-                            title: 'Scheduled',
-                            width: 'w-40',
-                            type: 'datetime',
-                            placeholder: 'Select date & time',
-                            Component: ({ value }) => value ? <DateDisplay date={value} format="short" showTime={true} /> : <span className="text-gray-400">Not scheduled</span>
-                        },
-
                         {
                             key: 'notes',
                             title: 'Notes',

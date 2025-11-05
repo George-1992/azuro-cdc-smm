@@ -130,9 +130,10 @@ model sources {
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
-  org_id    String
-  org       organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
-  campaigns campaigns[]
+  org_id       String
+  org          organizations  @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  campaigns    campaigns[]
+  publications publications[]
 
   @@index([org_id])
   @@index([name])
@@ -153,7 +154,8 @@ model avatars {
   org_id String
   org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
-  campaigns campaigns[]
+  campaigns    campaigns[]
+  publications publications[]
 
   @@index([org_id])
   @@index([name])
@@ -181,6 +183,8 @@ model campaigns {
 
   configs Json? @default("{}")
 
+  publications publications[]
+
   org_id String
   org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
@@ -192,19 +196,28 @@ model campaigns {
 }
 
 model publications {
-  id           String  @id @default(cuid())
-  name         String
-  status       String  @default("planned")
-  content_type String  @default("post")
-  language     String? @default("en")
-  title        String? @default("")
-  description  String? @default("")
-  media_urls   String? @default("")
-  message      String? @default("")
-  notes        String? @default("")
+  id                 String  @id @default(cuid())
+  name               String
+  status             String  @default("planned")
+  content_type       String  @default("post")
+  language           String? @default("en")
+  title              String? @default("")
+  description        String? @default("")
+  media_urls         String? @default("")
+  message            String? @default("")
+  notes              String? @default("")
+  global_inspiration String? @default("")
+  target_platforms   Json?   @default("[]")
 
   scheduled_at DateTime?
   published_at DateTime?
+
+  campaign_id String?
+  campaign    campaigns? @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  avatar_id   String?
+  avatar      avatars?   @relation(fields: [avatar_id], references: [id], onDelete: Cascade)
+  source_id   String?
+  source      sources?   @relation(fields: [source_id], references: [id], onDelete: Cascade)
 
   org_id String
   org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)

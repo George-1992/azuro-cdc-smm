@@ -39,8 +39,6 @@ export default function OneShot({ org }) {
         source_id: null,
         scheduled_at: new Date().toISOString(), // ISO string
         global_inspiration: '',
-        weekday: 'monday',
-        time: '09:00',
         target_platforms: [],
     });
     const [_avatars, _setAvatars] = useState([]);
@@ -87,6 +85,8 @@ export default function OneShot({ org }) {
         try {
             // Call the create publication API
             const response = await saCreatePublication({ data: newData, org: org });
+            console.log('response: ',response);
+            
             if (response?.success) {
                 notify({ type: 'success', message: 'One Shot created successfully!' });
             } else {
