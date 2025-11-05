@@ -2,16 +2,21 @@
 
 import { useState } from "react";
 import { Dropdown, DropdownTrigger, DropdownContent } from "@/components/other/dropdown";
-import { Settings, User, LogOut, UserIcon, Bell, Search, SearchIcon } from "lucide-react";
+import { Settings, LogOut, Bell, WandSparklesIcon } from "lucide-react";
 import Link from "next/link";
 import { SignoutEl } from "@/components/auth";
 import AlertBox from "@/components/other/alertBox";
+import { PopupModal } from "@/components/other/modals";
+import OneShot from "@/components/oneShot";
 
-export default function TopNav({ pathname, data, searchParams, session, user, account }) {
+export default function TopNav({ pathname, data, searchParams, session, user, account, org }) {
 
     const [isSigningOut, setIsSigningout] = useState(false);
 
+    const [_isOneShot, setIsOneShot] = useState(false);
+
     // console.log('TopNav session ==> ', session);
+    // console.log('TopNav org ==> ', org);
 
 
     const handleThisSignout = async (e) => {
@@ -29,7 +34,7 @@ export default function TopNav({ pathname, data, searchParams, session, user, ac
 
 
     if (isSigningOut) {
-        return <SignoutEl />;
+        return <SignoutEl org={org} />;
     }
 
     return (
@@ -38,20 +43,26 @@ export default function TopNav({ pathname, data, searchParams, session, user, ac
             <div className="flex-1"></div>
             {/* second part */}
             <div className="flex gap-4 items-center justify-center">
-                {/* <div className="flex items-center space-x-4">
-                    <div type="trigger" className="flex items-center justify-center p-2 bg-gray-200 rounded-full   ">
-                        <Settings className="h-5 w-5 text-gray-600" />
-                    </div>
-                </div> */}
-               
-                <div className="w-44 border border-gray-300 h-8 gap-2 flex items-center px-2 rounded-md cursor-not-allowed">
+
+
+                {/* <div className="w-44 border border-gray-300 h-8 gap-2 flex items-center px-2 rounded-md cursor-not-allowed">
                     <SearchIcon className="h-4 w-4 text-gray-400" />
                     <input
                         className="instead-input w-10/12 bg-white cursor-not-allowed"
                         placeholder="Search..."
                         disabled
                     />
-                </div>
+                </div> */}
+
+                <button
+                    className="flex py-2 px-4 gap-4 items-center justify-center bg-indigo-200 rounded-md hover:bg-indigo-300 transition-colors cursor-pointer"
+                    onClick={() => setIsOneShot(!_isOneShot)}
+                >
+                    <WandSparklesIcon className="h-5 w-5 text-gray-600 " />
+                    <span>
+                        One-shot
+                    </span>
+                </button>
 
                 <div className="flex items-center justify-center p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors cursor-pointer">
                     <Bell className="h-5 w-5 text-gray-600 " />
@@ -67,10 +78,10 @@ export default function TopNav({ pathname, data, searchParams, session, user, ac
                             <p className="text-sm text-gray-500">{session?.email || 'No email'}</p>
                         </div>
                         <div className="py-1">
-                            <Link href='/profile' className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            {/* <Link href='/profile' className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <UserIcon className="w-4 h-4" />
                                 Profile
-                            </Link>
+                            </Link> */}
                             <Link href='/settings' className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <Settings className="w-4 h-4" />
                                 Settings
@@ -85,6 +96,15 @@ export default function TopNav({ pathname, data, searchParams, session, user, ac
                 </Dropdown>
 
             </div>
+
+
+            <PopupModal
+                isOpen={_isOneShot}
+                onClose={() => setIsOneShot(false)}
+                size='xl'
+            >
+                <OneShot org={org} />
+            </PopupModal>
         </div>
     );
 }

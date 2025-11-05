@@ -7,53 +7,21 @@ import { useState, useEffect } from "react";
 import { toDisplayStr } from "@/utils/other";
 import { Calendar, CheckCircle, Clock, Edit3, FileText, MegaphoneIcon, Pause, Play, XCircle } from "lucide-react";
 import DateDisplay from "@/components/date/DateDisplay";
-import { languageOptions } from "@/data/types";
+import { languageOptions, socialMediaPlatforms, weekdayOptions } from "@/data/types";
+import StatusItem from "@/components/other/statusItem";
+import { Dropdown } from "@/components/other/dropdown";
 
 
 
-// Status Component with Icons
-const StatusItem = ({ value, row, rowIndex, column }) => {
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case 'draft':
-                return <Edit3 className="w-4 h-4 text-gray-500" />;
-            case 'scheduled':
-                return <Clock className="w-4 h-4 text-blue-500" />;
-            case 'published':
-                return <CheckCircle className="w-4 h-4 text-green-500" />;
-            case 'paused':
-                return <Pause className="w-4 h-4 text-yellow-500" />;
-            case 'cancelled':
-                return <XCircle className="w-4 h-4 text-red-500" />;
-            default:
-                return <FileText className="w-4 h-4 text-gray-400" />;
-        }
-    };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'draft':
-                return 'text-gray-600 bg-gray-100';
-            case 'scheduled':
-                return 'text-blue-600 bg-blue-100';
-            case 'published':
-                return 'text-green-600 bg-green-100';
-            case 'paused':
-                return 'text-yellow-600 bg-yellow-100';
-            case 'cancelled':
-                return 'text-red-600 bg-red-100';
-            default:
-                return 'text-gray-600 bg-gray-100';
-        }
-    };
+const weekTimeOptions = Array.from({ length: 24 }, (_, i) => {
+    return { value: `${i}:00`, label: `${i}:00` };
+});
 
-    return (
-        <div className={`w-full h-full p-1 flex items-center gap-2 px-2 py-1 rounded-md ${getStatusColor(value)}`}>
-            {getStatusIcon(value)}
-            <span className="capitalize text-xs font-medium">{value}</span>
-        </div>
-    );
-};
+const platformOptions = socialMediaPlatforms.map(platform => ({
+    value: platform,
+    label: toDisplayStr(platform)
+}));
 
 export default function Campaigns({ pathname, user, account, session, org }) {
 
@@ -66,11 +34,13 @@ export default function Campaigns({ pathname, user, account, session, org }) {
 
     // Define options for the dropdowns
     const statusOptions = [
-        { value: 'draft', label: 'Draft' },
-        { value: 'scheduled', label: 'Scheduled' },
-        { value: 'published', label: 'Published' },
-        { value: 'paused', label: 'Paused' },
-        { value: 'cancelled', label: 'Cancelled' }
+        // { value: 'draft', label: 'Draft' },
+        // { value: 'scheduled', label: 'Scheduled' },
+        // { value: 'published', label: 'Published' },
+        // { value: 'paused', label: 'Paused' },
+        // { value: 'cancelled', label: 'Cancelled' }
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
     ];
 
     const handleNewItem = async (item) => {
@@ -115,6 +85,8 @@ export default function Campaigns({ pathname, user, account, session, org }) {
             message: 'Unknown error',
             data: null,
         }
+        // console.log('handleUpdateItem : ', item);
+        // return resObj;
         try {
             const response = await saUpdateItem({
                 collection: collectionName,
@@ -209,17 +181,6 @@ export default function Campaigns({ pathname, user, account, session, org }) {
             if (sourcesResponse?.success) {
                 _setSources(sourcesResponse.data || []);
             }
-
-            // Fetch week templates
-            const weekTemplatesResponse = await saGetItems({
-                collection: 'week_templates',
-                query: {
-                    where: { org_id: org ? org.id : null }
-                }
-            });
-            if (weekTemplatesResponse?.success) {
-                _setWeekTemplates(weekTemplatesResponse.data || []);
-            }
         } catch (error) {
             console.error('Error fetching related data: ', error);
         }
@@ -297,18 +258,21 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                     tableExcludeKeys={['org_id']}
                     previewKey="global_inspiration"
                     editRenderOrder={[
-                        ['name', 'status'],
-                        ['language'],
+                        ['name'],
+                        ['language', 'status'],
                         ['avatar_id', 'source_id'],
-                        ['week_template_id'],
                         ['scheduled_at'],
                         ['global_inspiration'],
+                        ['agendaHeading'],
+                        ['weekday', 'time'],
+                        ['target_platforms'],
+                        ['spacerHeading'],
                     ]}
                     columns={[
                         {
                             key: 'name',
                             title: 'Name',
-                            width: 'w-48',
+                            width: 'w-32',
                             type: 'text',
                             required: true,
                             validateKey: 'length',
@@ -321,13 +285,46 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                             type: 'select',
                             options: statusOptions,
                             required: true,
-                            defaultValue: 'draft',
-                            Component: StatusItem
+                            defaultValue: 'inactive',
+                            Component: (props) => {
+                                return <StatusItem status={props.value} />
+                            },
+                            EditComponent: (props) => {
+                                return (
+                                    <Dropdown fixed={true} className="">
+                                        <div data-type="trigger" className="w-32 ">
+                                            <StatusItem status={props.value} />
+                                        </div>
+                                        <div data-type="content" className="w-48 right-0">
+                                            <div className="flex flex-col">
+                                                {statusOptions.map(option => (
+                                                    <button
+                                                        key={option.value}
+                                                        className="p-1 border-b border-gray-100 hover:bg-gray-50"
+                                                        onClick={(e) => {
+                                                            if (props?.onChange) {
+                                                                props.onChange({
+                                                                    target: {
+                                                                        name: 'status',
+                                                                        value: option.value
+                                                                    }
+                                                                });
+                                                            }
+                                                        }}
+                                                    >
+                                                        <StatusItem status={option.value} />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </Dropdown>
+                                )
+                            }
                         },
                         {
                             key: 'language',
                             title: 'Language',
-                            width: 'w-24',
+                            width: 'w-32',
                             type: 'select',
                             required: true,
                             options: languageOptions,
@@ -355,31 +352,70 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                             clearable: true
                         },
                         {
-                            key: 'week_template_id',
-                            title: 'Week Template',
-                            width: 'w-32',
-                            type: 'select',
-                            required: true,
-                            options: weekTemplateOptions,
-                            placeholder: 'Select template',
-                            clearable: true
-                        },
-                        {
                             key: 'global_inspiration',
                             title: 'Inspiration',
                             type: 'textarea',
                             required: false,
-                            width: 'w-64',
+                            width: 'w-32',
                             placeholder: 'Campaign inspiration...',
                             rows: 2
-                        }
+                        },
+                        {
+                            key: 'agendaHeading',
+                            type: 'element',
+                            Component: () => {
+                                return (
+                                    <div className="w-full mt-5 mb-2">
+                                        <span className="font-semibold">Agenda</span>
+                                        <div className="border-t text-gray-300"></div>
+                                    </div>
+                                );
+                            }
+                        },
+                        {
+                            key: 'weekday',
+                            title: 'Weekday',
+                            width: 'w-32',
+                            type: 'select',
+                            options: weekdayOptions,
+                            required: true,
+                            placeholder: 'Select day'
+                        },
+                        {
+                            key: 'time',
+                            title: 'Time',
+                            width: 'w-24',
+                            type: 'select',
+                            required: true,
+                            options: weekTimeOptions,
+                        },
+                        {
+                            key: 'target_platforms',
+                            title: 'Platforms',
+                            width: 'w-40',
+                            type: 'select',
+                            options: platformOptions,
+                            multiple: true,
+                            required: true,
+                            placeholder: 'Select platforms'
+                        },
+                        {
+                            key: 'spacerHeading',
+                            type: 'element',
+                            Component: () => {
+                                return (
+                                    <div className="w-full h-10">
+                                    </div>
+                                );
+                            }
+                        },
                     ]}
                     data={_data}
                     onAddNew={handleNewItem}
                     onRowChange={handleUpdateItem}
                     onRowDelete={handleDeleteItem}
                     onChange={(newData) => {
-                        console.log('Campaigns data changed: ', newData);
+                        // console.log('Campaigns data changed: ', newData);
                     }}
                 />
 

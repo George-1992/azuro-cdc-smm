@@ -5,12 +5,16 @@ import Campaigns from "@/data/pages/campaigns";
 import Credentials from "@/data/pages/credentials";
 import Home from "@/data/pages/home";
 import Profile from "@/data/pages/profile"
+import Publications from "@/data/pages/publications";
 import Settings from "@/data/pages/settings";
 import Sources from "@/data/pages/sources";
 import Team from "@/data/pages/team";
 import Test from "@/data/pages/test";
-import WeekTemplate from "@/data/pages/weekTemplate";
-import { BotIcon, CalendarSyncIcon, CircleGauge, HashIcon, HomeIcon, LibraryBig, ListChevronsUpDown, Lock, LucideLayoutDashboard, MegaphoneIcon, Newspaper, SettingsIcon, Share2, Share2Icon, SquareUser, StretchHorizontal, ToolCaseIcon, Users } from "lucide-react";
+import {
+    CircleGauge, LibraryBig,
+    MegaphoneIcon, Newspaper, SettingsIcon,
+    SquareUser, Users
+} from "lucide-react";
 
 const pagesMap = [
     // AUTH PAGES
@@ -75,13 +79,13 @@ const pagesMap = [
         // Component: (props) => { return <div>Sources</div> },
     },
     {
-        pathname: '/week-templates',
-        Component: (props) => { return <WeekTemplate {...props} />; },
+        pathname: '/campaigns',
+        Component: (props) => { return <Campaigns {...props} />; },
         // Component: (props) => { return <div>Sources</div> },
     },
     {
-        pathname: '/campaigns',
-        Component: (props) => { return <Campaigns {...props} />; },
+        pathname: '/publications',
+        Component: (props) => { return <Publications {...props} />; },
         // Component: (props) => { return <div>Sources</div> },
     },
 ]
@@ -98,12 +102,6 @@ export const pagesMapSidebar = [
         name: 'Campaigns',
         icon: (props) => <MegaphoneIcon {...props} />,
         href: '/campaigns',
-        subItems: []
-    },
-    {
-        name: 'Week Templates',
-        icon: (props) => <CalendarSyncIcon {...props} />,
-        href: '/week-templates',
         subItems: []
     },
     {

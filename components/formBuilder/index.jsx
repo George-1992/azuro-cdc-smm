@@ -21,6 +21,7 @@ export default function FormBuilder({
     excludeKeys = [],
     buttons = [], //buttons components to render next to the Save button
     isLoading = false,
+    submitButtonText = 'Save',
 }) {
 
     const [_formData, _setFormData] = useState(formData)
@@ -145,6 +146,8 @@ export default function FormBuilder({
     // console.log('FormBuilder renderOrder ==> ', _renderOrder);
     // console.log('_formData: ', _formData);
     // console.log('_formData: ', _formData);
+    // console.log('fields: ', fields);
+
 
     return (
         <div className={className}>
@@ -155,130 +158,152 @@ export default function FormBuilder({
                             const rowFields = fields.filter(f => rowItems.includes(f.name) && !f.hidden);
 
                             if (!rowFields || rowFields.length === 0) return null;
+
+
+
                             return (
                                 <div key={idx} className="flex md:flex-row flex-col gap-4">
-                                    {rowFields.map((field, fIdx) => (
-                                        <div key={`fIdx-level1-${fIdx}`} className={`form-group flex-1 relative flex flex-col${field.className || ''}`}>
-                                            <label
-                                                htmlFor={field.name}
-                                                className={cn(
-                                                    _formErrors[field.name] ? 'text-red-500' : '',
-                                                )}
-                                            >
-                                                {field.label}
-                                            </label>
+                                    {rowFields.map((field, fIdx) => {
+                                        // console.log('field: ', field);
 
-                                            {field.EditComponent || field.Component
-                                                ? (field.EditComponent
-                                                    ? <field.EditComponent
-                                                        value={_formData[field.name]}
-                                                        row={_formData}
-                                                        onChange={handleInputChange}
-                                                    />
-                                                    : <field.Component
-                                                        value={_formData[field.name]}
-                                                        row={_formData}
-                                                    />
-                                                )
-                                                : <div className="relative rounded-md">
-                                                    {field.type === 'select'
-                                                        ? (
-                                                            <Select
-                                                                id={field.name}
-                                                                name={field.name}
-                                                                value={_formData[field.name] || (field.multiple ? [] : '')}
+                                        if (field.type === 'element') {
+
+                                            return (
+                                                <field.Component
+                                                    key={`fIdx-level1-${fIdx}`}
+                                                    // formData={_formData}
+                                                    // formErrors={_formErrors}
+                                                    // onChange={handleInputChange}
+                                                    isLoading={_isLoading}
+                                                />
+                                            );
+                                        }
+
+                                        return (
+                                            <div key={`fIdx-level1-${fIdx}`} className={`form-group flex-1 relative flex flex-col justify-start ${field.className || ''}`}>
+                                                <label
+                                                    htmlFor={field.name}
+                                                    className={cn(
+                                                        _formErrors[field.name] ? 'text-red-500' : '',
+                                                    )}
+                                                >
+                                                    {field.label}
+                                                </label>
+
+                                                <div className="flex-1 flex flex-col items-start justify-center">
+                                                    {field.EditComponent || field.Component
+                                                        ? (field.EditComponent
+                                                            ? <field.EditComponent
+                                                                value={_formData[field.name]}
+                                                                row={_formData}
                                                                 onChange={handleInputChange}
-                                                                options={field.options || []}
-                                                                placeholder={field.placeholder}
-                                                                searchable={field.searchable || false}
-                                                                clearable={field.clearable || false}
-                                                                multiple={field.multiple || false}
-                                                                disabled={_isLoading || field.disabled}
-                                                                required={field.required}
-                                                                error={_formErrors[field.name]}
-                                                                renderOption={field.renderOption}
-                                                                renderValue={field.renderValue}
-                                                                loading={field.loading || false}
-                                                                loadingText={field.loadingText}
-                                                                noOptionsText={field.noOptionsText}
-                                                            // className={`${field.className || ''}`}
+                                                            />
+                                                            : <field.Component
+                                                                value={_formData[field.name]}
+                                                                row={_formData}
                                                             />
                                                         )
-                                                        : field.type === 'date' || field.type === 'datetime'
-                                                            ? (
-                                                                <DateInput
-                                                                    id={field.name}
-                                                                    name={field.name}
-                                                                    value={_formData[field.name] || ''}
-                                                                    onChange={handleInputChange}
-                                                                    placeholder={field.placeholder}
-                                                                    disabled={_isLoading || field.disabled}
-                                                                    required={field.required}
-                                                                    error={_formErrors[field.name]}
-                                                                    showTime={field.type === 'datetime' || field.showTime}
-                                                                    format={field.format}
-                                                                    clearable={field.clearable !== false}
-                                                                    minDate={field.minDate}
-                                                                    maxDate={field.maxDate}
-                                                                    className={`w-full ${_formErrors[field.name] ? 'border-red-400' : ''} `}
-                                                                />
-                                                            )
-                                                            : field.type === 'notesArray' ? (
-                                                                <NotesArray
-                                                                    value={_formData[field.name] || []}
-                                                                    onChange={(newValue) => {
-                                                                        const newFormData = { ..._formData, [field.name]: newValue };
-                                                                        _setFormData(newFormData);
-                                                                        onChange(newFormData);
-                                                                    }}
-                                                                    placeholder={field.placeholder || "Enter note..."}
-                                                                    readOnly={_isLoading || field.disabled}
-                                                                    className={`${_formErrors[field.name] ? 'border-red-400' : ''}`}
-                                                                />
-                                                            )
-                                                                : field.type === 'textarea'
+                                                        : <div className="w-full relative rounded-md">
+                                                            {field.type === 'select'
+                                                                ? (
+                                                                    <Select
+                                                                        id={field.name}
+                                                                        name={field.name}
+                                                                        value={_formData[field.name] || (field.multiple ? [] : '')}
+                                                                        onChange={handleInputChange}
+                                                                        options={field.options || []}
+                                                                        placeholder={field.placeholder}
+                                                                        searchable={field.searchable || false}
+                                                                        clearable={field.clearable || false}
+                                                                        multiple={field.multiple || false}
+                                                                        disabled={_isLoading || field.disabled}
+                                                                        required={field.required}
+                                                                        error={_formErrors[field.name]}
+                                                                        renderOption={field.renderOption}
+                                                                        renderValue={field.renderValue}
+                                                                        loading={field.loading || false}
+                                                                        loadingText={field.loadingText}
+                                                                        noOptionsText={field.noOptionsText}
+                                                                    // className={`${field.className || ''}`}
+                                                                    />
+                                                                )
+                                                                : field.type === 'date' || field.type === 'datetime'
                                                                     ? (
-                                                                        <textarea
+                                                                        <DateInput
                                                                             id={field.name}
                                                                             name={field.name}
-                                                                            placeholder={field.placeholder}
-                                                                            className={`form-control ${_formErrors[field.name] ? 'border-red-400' : ''} ${field.disabled && 'cursor-not-allowed'}`}
-                                                                            required={field.required}
-                                                                            onChange={handleInputChange}
-                                                                            disabled={_isLoading || field.disabled}
                                                                             value={_formData[field.name] || ''}
-                                                                            rows={field.rows || 3}
+                                                                            onChange={handleInputChange}
+                                                                            placeholder={field.placeholder}
+                                                                            disabled={_isLoading || field.disabled}
+                                                                            required={field.required}
+                                                                            error={_formErrors[field.name]}
+                                                                            showTime={field.type === 'datetime' || field.showTime}
+                                                                            format={field.format}
+                                                                            clearable={field.clearable !== false}
+                                                                            minDate={field.minDate}
+                                                                            maxDate={field.maxDate}
+                                                                            className={`w-full ${_formErrors[field.name] ? 'border-red-400' : ''} `}
                                                                         />
                                                                     )
-                                                                    : (
-                                                                        <input
-                                                                            id={field.name}
-                                                                            name={field.name}
-                                                                            type={field.type}
-                                                                            placeholder={field.placeholder}
-                                                                            className={`form-control ${_formErrors[field.name] ? 'border-red-400' : ''} ${field.disabled && 'cursor-not-allowed'} ${field.className || ''}`}
-                                                                            required={field.required}
-                                                                            onChange={handleInputChange}
-                                                                            disabled={_isLoading || field.disabled}
-                                                                            value={_formData[field.name] || ''}
-                                                                            autoComplete={field.autoComplete || ''}
+                                                                    : field.type === 'notesArray' ? (
+                                                                        <NotesArray
+                                                                            value={_formData[field.name] || []}
+                                                                            onChange={(newValue) => {
+                                                                                const newFormData = { ..._formData, [field.name]: newValue };
+                                                                                _setFormData(newFormData);
+                                                                                onChange(newFormData);
+                                                                            }}
+                                                                            placeholder={field.placeholder || "Enter note..."}
+                                                                            readOnly={_isLoading || field.disabled}
+                                                                            className={`${_formErrors[field.name] ? 'border-red-400' : ''}`}
                                                                         />
-                                                                    )}
-                                                    {_isLoading && <div className="animate-shimmer" />}
+                                                                    )
+                                                                        : field.type === 'textarea'
+                                                                            ? (
+                                                                                <textarea
+                                                                                    id={field.name}
+                                                                                    name={field.name}
+                                                                                    placeholder={field.placeholder}
+                                                                                    className={`form-control ${_formErrors[field.name] ? 'border-red-400' : ''} ${field.disabled && 'cursor-not-allowed'}`}
+                                                                                    required={field.required}
+                                                                                    onChange={handleInputChange}
+                                                                                    disabled={_isLoading || field.disabled}
+                                                                                    value={_formData[field.name] || ''}
+                                                                                    rows={field.rows || 3}
+                                                                                />
+                                                                            )
+                                                                            : (
+                                                                                <input
+                                                                                    id={field.name}
+                                                                                    name={field.name}
+                                                                                    type={field.type}
+                                                                                    placeholder={field.placeholder}
+                                                                                    className={`form-control ${_formErrors[field.name] ? 'border-red-400' : ''} ${field.disabled && 'cursor-not-allowed'} ${field.className || ''}`}
+                                                                                    required={field.required}
+                                                                                    onChange={handleInputChange}
+                                                                                    disabled={_isLoading || field.disabled}
+                                                                                    value={_formData[field.name] || ''}
+                                                                                    autoComplete={field.autoComplete || ''}
+                                                                                />
+                                                                            )}
+                                                            {_isLoading && <div className="animate-shimmer" />}
 
 
+                                                        </div>
+                                                    }
+
+
+
+                                                    {_formErrors[field.name] && !['select', 'date', 'datetime', 'notesArray'].includes(field.type) && (
+                                                        <p className="text-sm text-red-500 my-1 expanding">
+                                                            {_formErrors[field.name]}
+                                                        </p>
+                                                    )}
                                                 </div>
-                                            }
-
-
-
-                                            {_formErrors[field.name] && !['select', 'date', 'datetime', 'notesArray'].includes(field.type) && (
-                                                <p className="text-sm text-red-500 my-1 expanding">
-                                                    {_formErrors[field.name]}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ))}
+                                            </div>
+                                        )
+                                    })}
                                 </div>
                             );
                         })
@@ -294,8 +319,8 @@ export default function FormBuilder({
                                     </button>
                                 ))
                                 : <div className="flex items-center justify-end" type="submit">
-                                    <button className={`btn btn-primary w-24 ${buttonClassName}`} disabled={_isLoading || disabled} type="submit">
-                                        Save
+                                    <button className={`btn btn-primary min-w-24 ${buttonClassName}`} disabled={_isLoading || disabled} type="submit">
+                                        {submitButtonText}
                                     </button>
                                 </div>
                         }

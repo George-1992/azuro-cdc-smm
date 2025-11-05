@@ -29,6 +29,7 @@ export const Dropdown = ({
     children = [], fixed = false, onOpen = () => { },
     className = '',
     isOpen = null,
+    align = 'right',
 }) => {
 
     const [_isOpen, _setIsOpen] = useState(isOpen);
@@ -137,16 +138,20 @@ export const Dropdown = ({
                 className={Trigger.props.className || ''}
                 onClick={handleTriggerClick}
                 data-dropdown-trigger="true"
+                type='button'
             >
                 {Trigger}
             </button>
             {
                 _isOpen && (
                     <div
-                        className={`min-w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 ${fixed
-                            ? 'fixed'
-                            : 'absolute right-0 mt-2'
-                            }`}
+                        className={`min-w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 
+                            ${fixed
+                                ? 'fixed'
+                                : 'absolute mt-2'
+                            }
+                            ${align === 'right' && !fixed ? 'right-0' : ''}
+                            `}
                         style={fixed ? {
                             top: `${position.top}px`,
                             left: `${position.left}px`

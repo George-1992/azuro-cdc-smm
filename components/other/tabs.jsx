@@ -1,80 +1,136 @@
 'use client';
+import React, { useState, createContext, useContext } from 'react';
 
-import { useState, Children, cloneElement, useEffect } from 'react';
+// Create context for tabs state
+const TabsContext = createContext();
 
-const TabTrigger = (props) => {
+// Main Tabs component
+export const Tabs = ({ 
+    children, 
+    defaultValue,
+    value: controlledValue,
+    onValueChange,
+    className = '' 
+}) => {
+
+    // if not defined, use first child's value as default
+    let _defaultValue = defaultValue;
+    if (_defaultValue === undefined && React.Children.count(children) > 0) {
+        const firstChild = React.Children.toArray(children).find(child => React.isValidElement(child) && child.props.value !== undefined);
+        _defaultValue = firstChild.props.value;
+    }
+    const [internalValue, setInternalValue] = useState(_defaultValue);
+
+    const isControlled = controlledValue !== undefined;
+    const activeValue = isControlled ? controlledValue : internalValue;
+    
+    const handleValueChange = (newValue) => {
+        if (!isControlled) {
+            setInternalValue(newValue);
+        }
+        onValueChange?.(newValue);
+    };
+
     return (
-        <button
-            className={`flex flex-1 text-sm font-semibold items-center justify-center text-center  
-                ${props.isActive
-                    ? 'bg-background text-foreground rounded-md shadow-sm bg-white'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                } 
-                ${props.className ? props.className : 'p-1.5'}
-                `}
-            onClick={props.onClick}
-        >
-            {props.children}
-        </button>
+        <TabsContext.Provider value={{ activeValue, onValueChange: handleValueChange }}>
+            <div className={`w-full ${className}`} data-orientation="horizontal" role="tablist">
+                {children}
+            </div>
+        </TabsContext.Provider>
     );
 };
 
-const TabItem = ({ children, isActive }) => {
+// Tabs list container for tab triggers
+export const TabsList = ({ children, className = '' }) => {
     return (
-        <div className={`${isActive ? 'block' : 'hidden'}`}>
+        <div className={`inline-flex h-10 items-center justify-center rounded-md bg-gray-100 p-1 text-gray-500 ${className}`}>
             {children}
         </div>
     );
 };
 
-const Tabs = ({ children, defaultIndex = 0, className = '', onChange = () => { } }) => {
-    const [activeIndex, setActiveIndex] = useState(defaultIndex);
-
-    // Filter Tab components and extract their props
-    const tabTriggers = Children.toArray(children).filter(
-        child => child.props?.type === 'trigger' || child.type?.displayName === 'TabTrigger'
-    );
-
-    const tabItems = Children.toArray(children).filter(
-        child => child.props?.type === 'item' || child.type?.displayName === 'TabItem'
-    );
-
-    useEffect(() => {
-        onChange(activeIndex);
-    }, [activeIndex, onChange]);
-
+// Individual tab trigger
+export const TabsTrigger = ({ 
+    children, 
+    value, 
+    disabled = false,
+    className = '' 
+}) => {
+    const context = useContext(TabsContext);
+    
+    if (!context) {
+        throw new Error('TabsTrigger must be used within a Tabs component');
+    }
+    
+    const { activeValue, onValueChange } = context;
+    const isActive = activeValue === value;
+    
     return (
-        <div className={`w-full ${className}`}>
-            <div className="w-full flex p-1 mb-2 items-center rounded-md bg-gray-100">
-                {tabTriggers.map((trigger, idx) => (
-                    <TabTrigger
-                        {...trigger.props}
-                        key={idx}
-                        isActive={activeIndex === idx}
-                        onClick={() => trigger.props.onClick ? trigger.props.onClick() : setActiveIndex(idx)}
-                    >
-                        {trigger.props.children}
-                    </TabTrigger>
-                ))}
-            </div>
+        <button
+            className={`
+                inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 
+                text-sm font-medium ring-offset-white transition-all 
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
+                disabled:pointer-events-none disabled:opacity-50
+                ${isActive 
+                    ? 'bg-white text-gray-950 shadow-sm' 
+                    : 'hover:bg-gray-200 hover:text-gray-900'
+                }
+                ${className}
+            `}
+            role="tab"
+            aria-selected={isActive}
+            aria-controls={`tabcontent-${value}`}
+            data-state={isActive ? 'active' : 'inactive'}
+            disabled={disabled}
+            onClick={() => !disabled && onValueChange(value)}
+        >
+            {children}
+        </button>
+    );
+};
 
-            <div className=''>
-                {tabItems.map((item, idx) => (
-                    <TabItem
-                        {...item.props}
-                        key={idx}
-                        isActive={activeIndex === idx}
-                    >
-                        {item.props.children}
-                    </TabItem>
-                ))}
-            </div>
+// Tab content panel
+export const TabsContent = ({ 
+    children, 
+    value,
+    className = '' 
+}) => {
+    const context = useContext(TabsContext);
+    
+    if (!context) {
+        throw new Error('TabsContent must be used within a Tabs component');
+    }
+    
+    const { activeValue } = context;
+    const isActive = activeValue === value;
+    
+    if (!isActive) {
+        return null;
+    }
+    
+    return (
+        <div
+            className={`mt-2 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${className}`}
+            role="tabpanel"
+            aria-labelledby={`tab-${value}`}
+            id={`tabcontent-${value}`}
+            tabIndex={0}
+        >
+            {children}
         </div>
     );
 };
 
-// Export individual components for direct use
-export { TabTrigger, TabItem };
-
-// Export main component as default
-export default Tabs;
+// Legacy components for backward compatibility (optional)
+export const TabContainer = Tabs;
+export const Tab = ({ children, label }) => (
+    <>
+        <TabsTrigger value={label.toLowerCase().replace(/\s+/g, '-')}>
+            {label}
+        </TabsTrigger>
+        <TabsContent value={label.toLowerCase().replace(/\s+/g, '-')}>
+            {children}
+        </TabsContent>
+    </>
+);

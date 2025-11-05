@@ -5,15 +5,16 @@ import {
     saGetItems, saUpdateItem
 } from "@/components/serverActions.jsx";
 import { notify } from "@/components/sonnar/sonnar";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { ExpandableModal, PopupModal } from "@/components/other/modals";
 import Table from "@/components/table";
 import { makeFirstLetterUppercase } from "@/utils/other";
 import FormBuilder from "@/components/formBuilder";
-import { languageOptions, webhookTypes } from "@/data/types";
+import { languageOptions, socialMediaPlatforms, webhookTypes } from "@/data/types";
 import Image from "next/image";
 import { Building, TextInitial } from "lucide-react";
 import Timezones from "@/data/tomezones.json";
+import { TabContainer, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/other/tabs";
 
 
 export default function Settings({ params, pathname, searchParams, session, user, account, org, orgs }) {
@@ -36,6 +37,15 @@ export default function Settings({ params, pathname, searchParams, session, user
     }
     if (!preOrg.configs.blotato) {
         preOrg.configs.blotato = blotato;
+    }
+    if (!preOrg.configs.accounts) {
+        preOrg.configs.accounts = [
+            // {
+            //     name: 'snd Twitter Account',
+            //     type: 'twitter',
+            //     accountId: '',
+            // }
+        ];
     }
 
     const [_org, _setOrg] = useState(preOrg);
@@ -227,9 +237,6 @@ export default function Settings({ params, pathname, searchParams, session, user
 
     return (
         <div className="container-main flex flex-col gap-6">
-            {/* <h1 className="text-2xl">Settings </h1> */}
-
-            {/* general inputs */}
             <div>
                 <h2 className="text-xl mb-2">Account </h2>
                 <div className="card-1 flex flex-col gap-3">
@@ -248,218 +255,373 @@ export default function Settings({ params, pathname, searchParams, session, user
 
             </div>
 
-            {/* Organization */}
-            <div>
-                <div className="card-1 flex flex-col gap-3">
-                    <div className="flex gap-3  items-center">
-                        <Building className="size-5" />
-                        <span className="text-xl">Organization</span>
+            <Tabs>
+                <TabsList>
+                    <TabsTrigger value="general" className="mr-2">
+                        General
+                    </TabsTrigger>
+                    <TabsTrigger value="webhooks" className="mr-2">
+                        Webhooks
+                    </TabsTrigger>
+                    <TabsTrigger value="credentials" className="mr-2">
+                        Credentials
+                    </TabsTrigger>
+                    <TabsTrigger value="accounts" className="mr-2">
+                        Accounts
+                    </TabsTrigger>
+                    <TabsTrigger value="context" className="mr-2">
+                        Context
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="general">
+                    <div>
+                        <div className="card-1 flex flex-col gap-3">
+                            <div className="flex gap-3  items-center">
+                                <Building className="size-5" />
+                                <span className="text-xl">Organization</span>
+                            </div>
+                            <FormBuilder
+                                formData={_org}
+                                onSubmit={handleOrgUpdate}
+                                fields={[
+                                    {
+                                        name: 'id',
+                                        label: 'Organization ID',
+                                        placeholder: 'Enter organization ID',
+                                        required: true,
+                                        disabled: true,
+                                    },
+                                    {
+                                        name: 'name',
+                                        label: 'Organization Name',
+                                        placeholder: 'Enter organization name',
+                                        required: true,
+                                    },
+                                    {
+                                        name: 'timezone',
+                                        label: 'Timezone',
+                                        placeholder: 'Select timezone',
+                                        required: true,
+                                        type: 'select',
+                                        searchable: true,
+                                        options: Timezones.map(zone => ({
+                                            value: zone.zone,
+                                            label: `${zone.name} ${zone.gmt}`
+                                        })),
+                                    }
+                                ]}
+                            />
+                        </div>
                     </div>
-                    <FormBuilder
-                        formData={_org}
-                        onSubmit={handleOrgUpdate}
-                        fields={[
-                            {
-                                name: 'id',
-                                label: 'Organization ID',
-                                placeholder: 'Enter organization ID',
-                                required: true,
-                                disabled: true,
-                            },
-                            {
-                                name: 'name',
-                                label: 'Organization Name',
-                                placeholder: 'Enter organization name',
-                                required: true,
-                            },
-                            {
-                                name: 'timezone',
-                                label: 'Timezone',
-                                placeholder: 'Select timezone',
-                                required: true,
-                                type: 'select',
-                                searchable: true,
-                                options: Timezones.map(zone => ({
-                                    value: zone.zone,
-                                    label: `${zone.name} ${zone.gmt}`
-                                })),
+                </TabsContent>
+                <TabsContent value="webhooks">
+                    {/* webhooks */}
+                    {/* webhooks for sources and avatars */}
+                    <div className="card-1 ">
+                        <div className="flex gap-3 items-center">
+                            <Image
+                                src={'/images/other/n8n-logo.svg'}
+                                alt={'n8n Logo'}
+                                width={40}
+                                height={40}
+                            />
+                            <span className="text-xl">
+                                Webhooks n8n
+                            </span>
+                        </div>
+                        <FormBuilder
+                            formData={_org.webhooks || {}}
+                            isLoading={isActionLoading}
+                            fields={
+                                webhookTypes.map(whType => ({
+                                    name: whType,
+                                    label: `${makeFirstLetterUppercase(whType)} Webhook`,
+                                    placeholder: `Enter your ${whType} webhook URL`,
+                                    type: 'url',
+                                    required: true,
+                                    hidden: false,
+                                    disabled: false,
+                                    validator: 'url'
+                                }))
                             }
-                        ]}
+                            onSubmit={(data) => {
+                                handleOrgUpdate({
+                                    ..._org,
+                                    webhooks: data
+                                });
+                                setIsPopupOpen(false);
+                            }}
+                        />
+
+                    </div>
+                </TabsContent>
+                <TabsContent value="credentials">
+                    <div className="flex flex-col gap-6">
+                        {/* Blotato */}
+                        <div className="card-1 flex flex-col gap-3">
+                            <div className="flex gap-3 items-center">
+                                <Image
+                                    src={'/images/other/blotato-logo.webp'}
+                                    alt={'Blotato Logo'}
+                                    width={40}
+                                    height={40}
+                                />
+                                <span className="text-xl">Blotato</span>
+                            </div>
+                            <FormBuilder
+                                formData={_org.configs.blotato || {}}
+                                isLoading={isActionLoading}
+                                fields={[
+                                    {
+                                        name: 'apiKey',
+                                        label: 'Blotato API key',
+                                        placeholder: `Enter your blotato webhook URL`,
+                                        required: true,
+                                        hidden: false,
+                                        disabled: false,
+                                        validator: 'length'
+                                    }
+                                ]}
+                                onSubmit={(data) => {
+                                    handleOrgUpdate({
+                                        ..._org,
+                                        configs: {
+                                            ..._org.configs,
+                                            blotato: data
+                                        }
+                                    });
+                                }}
+                            />
+                        </div>
+
+                        {/* ElevenLabs */}
+                        <div className="card-1 flex flex-col gap-3">
+                            <div className="flex gap-3 items-center">
+                                <Image
+                                    src={'/images/other/elevenlabs-logo.png'}
+                                    alt={'ElevenLabs Logo'}
+                                    width={40}
+                                    height={40}
+                                />
+                                <span className="text-xl">ElevenLabs</span>
+                            </div>
+                            <FormBuilder
+                                formData={_org.configs.elevenLabs || {}}
+                                isLoading={isActionLoading}
+                                fields={[
+                                    {
+                                        name: 'apiKey',
+                                        label: 'ElevenLabs API key',
+                                        placeholder: `Enter your elevenLabs API key`,
+                                        required: true,
+                                        hidden: false,
+                                        disabled: false,
+                                        validator: 'length'
+                                    },
+                                    {
+                                        name: 'defaultVoiceId',
+                                        label: 'ElevenLabs Default Voice ID',
+                                        placeholder: `Enter your elevenLabs Default Voice ID`,
+                                        required: true,
+                                        hidden: false,
+                                        disabled: false,
+                                        validator: 'length'
+                                    }
+                                ]}
+                                onSubmit={(data) => {
+                                    handleOrgUpdate({
+                                        ..._org,
+                                        configs: {
+                                            ..._org.configs,
+                                            elevenLabs: data
+                                        }
+                                    });
+                                }}
+                            />
+                        </div>
+                    </div>
+                </TabsContent>
+                <TabsContent value="accounts">
+                    <div className="card-1 flex flex-col gap-4">
+                        <div className="flex gap-3 items-center justify-between">
+                            <div className="flex gap-3 items-center">
+                                <Building className="size-5" />
+                                <span className="text-xl">Social Media Accounts</span>
+                            </div>
+                        </div>
+
+                        <div className="w-full relative rounded-md overflow-x-auto">
+                            <Table
+                                className="min-w-full"
+                                editable={true}
+                                editableInline={false}
+                                allowAddNew={true}
+                                actions={['edit', 'delete']}
+                                tableExcludeKeys={['configs']}
+                                editRenderOrder={[
+                                    ['type'],
+                                    ['name'],
+                                    ['accountId'],
+                                ]}
+                                columns={[
+                                    {
+                                        key: 'type',
+                                        title: 'type',
+                                        width: 'w-32',
+                                        type: 'select',
+                                        options: socialMediaPlatforms,
+                                        required: true,
+                                        placeholder: 'Select platform',
+                                    },
+                                    {
+                                        key: 'name',
+                                        title: 'Name',
+                                        width: 'w-48',
+                                        type: 'text',
+                                        required: true,
+                                        validateKey: 'length',
+                                        placeholder: 'e.g. Main Instagram Account'
+                                    },
+                                    {
+                                        key: 'accountId',
+                                        title: 'Account ID',
+                                        width: 'w-40',
+                                        type: 'text',
+                                        required: true,
+                                        placeholder: 'enter account id',
+                                    },
+                                ]}
+                                data={_org?.configs?.accounts || []}
+                                onAddNew={async (item) => {
+                                    try {
+                                        const newAccounts = [...(_org?.configs?.accounts || []), {
+                                            ...item,
+                                            id: Date.now().toString(), // Simple ID generation
+                                            createdAt: new Date().toISOString()
+                                        }];
+
+                                        const newOrg = {
+                                            ..._org,
+                                            configs: {
+                                                ..._org.configs,
+                                                accounts: newAccounts
+                                            }
+                                        };
+
+                                        await handleOrgUpdate(newOrg);
+                                        return { success: true, message: 'Account added successfully' };
+                                    } catch (error) {
+                                        return { success: false, message: 'Failed to add account' };
+                                    }
+                                }}
+                                onRowChange={async (item) => {
+                                    try {
+                                        const updatedAccounts = (_org?.configs?.accounts || []).map(acc =>
+                                            acc.id === item.id ? { ...acc, ...item } : acc
+                                        );
+
+                                        const newOrg = {
+                                            ..._org,
+                                            configs: {
+                                                ..._org.configs,
+                                                accounts: updatedAccounts
+                                            }
+                                        };
+
+                                        await handleOrgUpdate(newOrg);
+                                        return { success: true, message: 'Account updated successfully' };
+                                    } catch (error) {
+                                        return { success: false, message: 'Failed to update account' };
+                                    }
+                                }}
+                                onRowDelete={async (item) => {
+                                    try {
+                                        const filteredAccounts = (_org?.configs?.accounts || []).filter(acc =>
+                                            acc.id !== item.id
+                                        );
+
+                                        const newOrg = {
+                                            ..._org,
+                                            configs: {
+                                                ..._org.configs,
+                                                accounts: filteredAccounts
+                                            }
+                                        };
+
+                                        await handleOrgUpdate(newOrg);
+                                        return { success: true, message: 'Account deleted successfully' };
+                                    } catch (error) {
+                                        return { success: false, message: 'Failed to delete account' };
+                                    }
+                                }}
+                                onChange={(newData) => {
+                                    console.log('Accounts data changed: ', newData);
+                                }}
+                            />
+                        </div>
+
+                        <div className="text-sm text-gray-500 bg-blue-50 p-3 rounded-md">
+                            <strong>Note:</strong> These are your social media accounts that can be used in publications.
+                        </div>
+                    </div>
+                </TabsContent>
+                <TabsContent value="context">
+                    <div className="card-1 flex flex-col gap-3">
+                        <div className="flex gap-3  items-center">
+                            <TextInitial className="size-5" />
+                            <span className="text-xl">Default creation context</span>
+                        </div>
+                        <FormBuilder
+                            formData={_org.configs || {}}
+                            isLoading={isActionLoading}
+                            fields={[
+                                {
+                                    name: 'language',
+                                    label: 'Preferred language',
+                                    type: 'select',
+                                    options: languageOptions,
+                                },
+                                {
+                                    name: 'context',
+                                    label: 'Default creation context',
+                                    type: 'textarea',
+                                    placeholder: `Enter your default creation context`,
+                                    required: true,
+                                    validatorKey: 'length'
+                                },
+                                {
+                                    name: 'targetAudience',
+                                    label: 'Target audience',
+                                    type: 'textarea',
+                                    placeholder: `Enter your target audience (persona description; optional)`,
+                                    required: true,
+                                    validatorKey: 'length'
+                                },
+
+                            ]}
+                            onSubmit={(data) => {
+                                let newOrg = { ..._org };
+                                newOrg.configs = newOrg.configs || {};
+                                newOrg.configs.language = data.language;
+                                newOrg.configs.context = data.context;
+                                newOrg.configs.targetAudience = data.targetAudience;
+                                handleOrgUpdate(newOrg);
+                            }}
+                        />
+                    </div>
+
+                </TabsContent>
+
+                <TabsContent value="other">
+                    other
+                </TabsContent>
+            </Tabs>
 
 
-                    />
-                </div>
-            </div>
 
 
-            {/* webhooks */}
-            {/* webhooks for sources and avatars */}
-            <div className="card-1 ">
-                <div className="flex gap-3 items-center">
-                    <Image
-                        src={'/images/other/n8n-logo.svg'}
-                        alt={'n8n Logo'}
-                        width={40}
-                        height={40}
-                    />
-                    <span className="text-xl">
-                        Webhooks n8n
-                    </span>
-                </div>
-                <FormBuilder
-                    formData={_org.webhooks || {}}
-                    isLoading={isActionLoading}
-                    fields={
-                        webhookTypes.map(whType => ({
-                            name: whType,
-                            label: `${makeFirstLetterUppercase(whType)} Webhook`,
-                            placeholder: `Enter your ${whType} webhook URL`,
-                            type: 'url',
-                            required: true,
-                            hidden: false,
-                            disabled: false,
-                            validator: 'url'
-                        }))
-                    }
-                    onSubmit={(data) => {
-                        handleOrgUpdate({
-                            ..._org,
-                            webhooks: data
-                        });
-                        setIsPopupOpen(false);
-                    }}
-                />
 
-            </div>
-
-            {/* Blotato */}
-            <div className="card-1 flex flex-col gap-3">
-                <div className="flex gap-3 items-center">
-                    <Image
-                        src={'/images/other/blotato-logo.webp'}
-                        alt={'Blotato Logo'}
-                        width={40}
-                        height={40}
-                    />
-                    <span className="text-xl">Blotato</span>
-                </div>
-                <FormBuilder
-                    formData={_org.configs.blotato || {}}
-                    isLoading={isActionLoading}
-                    fields={[
-                        {
-                            name: 'apiKey',
-                            label: 'Blotato API key',
-                            placeholder: `Enter your blotato webhook URL`,
-                            required: true,
-                            hidden: false,
-                            disabled: false,
-                            validator: 'length'
-                        }
-                    ]}
-                    onSubmit={(data) => {
-                        handleOrgUpdate({
-                            ..._org,
-                            configs: {
-                                ..._org.configs,
-                                blotato: data
-                            }
-                        });
-                    }}
-                />
-            </div>
-
-            {/* ElevenLabs */}
-            <div className="card-1 flex flex-col gap-3">
-                <div className="flex gap-3 items-center">
-                    <Image
-                        src={'/images/other/elevenlabs-logo.png'}
-                        alt={'ElevenLabs Logo'}
-                        width={40}
-                        height={40}
-                    />
-                    <span className="text-xl">ElevenLabs</span>
-                </div>
-                <FormBuilder
-                    formData={_org.configs.elevenLabs || {}}
-                    isLoading={isActionLoading}
-                    fields={[
-                        {
-                            name: 'apiKey',
-                            label: 'ElevenLabs API key',
-                            placeholder: `Enter your elevenLabs API key`,
-                            required: true,
-                            hidden: false,
-                            disabled: false,
-                            validator: 'length'
-                        },
-                        {
-                            name: 'defaultVoiceId',
-                            label: 'ElevenLabs Default Voice ID',
-                            placeholder: `Enter your elevenLabs Default Voice ID`,
-                            required: true,
-                            hidden: false,
-                            disabled: false,
-                            validator: 'length'
-                        }
-                    ]}
-                    onSubmit={(data) => {
-                        handleOrgUpdate({
-                            ..._org,
-                            configs: {
-                                ..._org.configs,
-                                elevenLabs: data
-                            }
-                        });
-                    }}
-                />
-            </div>
-
-
-            {/* context */}
-            <div className="card-1 flex flex-col gap-3">
-                <div className="flex gap-3  items-center">
-                    <TextInitial className="size-5" />
-                    <span className="text-xl">Default creation context</span>
-                </div>
-                <FormBuilder
-                    formData={_org.configs || {}}
-                    isLoading={isActionLoading}
-                    fields={[
-                        {
-                            name: 'language',
-                            label: 'Preferred language',
-                            type: 'select',
-                            options: languageOptions,
-                        },
-                        {
-                            name: 'context',
-                            label: 'Default creation context',
-                            type: 'textarea',
-                            placeholder: `Enter your default creation context`,
-                            required: true,
-                            validatorKey: 'length'
-                        },
-                        {
-                            name: 'targetAudience',
-                            label: 'Target audience',
-                            type: 'textarea',
-                            placeholder: `Enter your target audience (persona description; optional)`,
-                            required: true,
-                            validatorKey: 'length'
-                        },
-
-                    ]}
-                    onSubmit={(data) => {
-                        let newOrg = { ..._org };
-                        newOrg.configs = newOrg.configs || {};
-                        newOrg.configs.language = data.language;
-                        newOrg.configs.context = data.context;
-                        newOrg.configs.targetAudience = data.targetAudience;
-                        handleOrgUpdate(newOrg);
-                    }}
-                />
-            </div>
 
 
 

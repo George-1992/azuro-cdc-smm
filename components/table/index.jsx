@@ -63,7 +63,7 @@ export const Table = ({
 
 
 
-    const preColumns = (() => {
+    const getCols = () => {
         const arr = [];
         if (columns.length > 0) {
             arr.push(...columns);
@@ -73,12 +73,20 @@ export const Table = ({
                     .map(key => ({ key, title: key })));
             }
         }
-        return arr.filter(col => !tableExcludeKeys.includes(col.key));
-    })();
+        const filteredArr = arr.filter(col =>
+            !tableExcludeKeys.includes(col.key)
+            && col.type !== 'heading'
+            && col.type !== 'element'
+        );
+
+        // console.log('Filtered Columns: ', filteredArr);
+        return filteredArr;
+    };
+
 
     const [_originalData, _setOriginalData] = useState(data);
     const [_data, _setData] = useState(data || []);
-    const [_columns, _setColumns] = useState(preColumns);
+    const [_columns, _setColumns] = useState(getCols());
 
     const [searchTerm, setSearchTerm] = useState('');
     const [_sortKey, _setSortKey] = useState(null);
@@ -345,6 +353,20 @@ export const Table = ({
         }
     };
 
+    const getPlcHolder = (col) => {
+        let v = '';
+        if (!v) {
+            if (col.title) {
+                v = `Enter ${col.title.toLowerCase()}...`;
+            } else if (col.key) {
+                v = `Enter ${col.key.toLowerCase()}...`;
+            } else {
+                v = '';
+            }
+        }
+        return v;
+    }
+
 
     // search, sort, data change
     useEffect(() => {
@@ -418,7 +440,7 @@ export const Table = ({
     // update on columns change
     useEffect(() => {
         if (!isEqual(columns, _columns)) {
-            _setColumns(columns);
+            _setColumns(getCols());
         }
     }, [columns]);
 
@@ -482,6 +504,14 @@ export const Table = ({
                 <table className='table-fixed' style={{ minWidth: `${minTableWidth}px`, width: '100%' }}>
                     <thead className='border-b border-gray-200 bg-gray-50'>
                         <tr content=''>
+                            {actions && actions.length > 0 &&
+                                <th>
+                                    <div className='px-2 py-2 text-sm font-medium text-gray-500 flex justify-start'>
+                                        Actions
+                                    </div>
+                                </th>
+                            }
+
                             {_columns.map((column) => (
                                 <th key={column.key} className={`${column.width || ''} px-2 py-2 text-left text-sm font-medium text-gray-500`}>
                                     <div className={`flex items-center gap-2 ${column.width || ''}`}>
@@ -502,13 +532,7 @@ export const Table = ({
                                     </div>
                                 </th>
                             ))}
-                            {actions && actions.length > 0 &&
-                                <th>
-                                    <div className='px-2 py-2 text-left text-sm font-medium text-gray-500 flex justify-end'>
-                                        Actions
-                                    </div>
-                                </th>
-                            }
+
                         </tr>
                     </thead>
                     <tbody className=''>
@@ -517,12 +541,83 @@ export const Table = ({
                             // console.log('isModified', isModified, modifiedRowIds, modifiedRowIds);
 
 
-
                             return (
                                 <tr key={rowIndex} className={`
                                 border-b border-gray-200 ${isModified ? 'bg-yellow-100' : ''}
                                 ${row.disabled && 'opacity-55'}
                                 `}>
+
+                                    {/* actions */}
+                                    {actions && actions.length > 0 && !row.disabled && editable &&
+                                        <td>
+                                            <div className='flex items-center gap-3 justify-start ml-2'>
+                                                {!isModified && actions && actions.length > 0 &&
+                                                    actions.map((action, aIdx) => {
+                                                        const otherProps = {};
+                                                        let Icon = Pencil;
+                                                        if (action === 'edit') Icon = Edit2;
+                                                        if (action === 'delete') Icon = Trash;
+                                                        if (action === 'view') Icon = ArrowBigRight;
+                                                        if (action === 'preview') Icon = Eye;
+                                                        if (action === 'custom' && action.Icon) Icon = action.Icon;
+
+                                                        const func = action === 'edit'
+                                                            ? handleActionEdit
+                                                            : action === 'delete'
+                                                                ? handleActionDelete
+                                                                : action === 'preview'
+                                                                    ? handleActionPreview
+                                                                    : () => { };
+
+                                                        let Comp = null;
+                                                        if (action === 'view' && linkPrefix && row.id) {
+                                                            otherProps.href = `${linkPrefix || pathname}/${row.id}`;
+
+                                                            Comp = Link;
+                                                        } else {
+                                                            Comp = 'button';
+                                                        }
+
+                                                        return (
+                                                            <Comp
+                                                                key={aIdx}
+                                                                onClick={() => func(row)}
+                                                                className='p-1.5 bg-gray-200 border border-gray-100 rounded-md hover:bg-gray-300 transition-colors '
+                                                                {...otherProps}
+                                                            >
+                                                                <Icon className={`size-4 ${action === 'delete' ? 'text-red-500' : 'text-gray-500'}`} />
+                                                            </Comp>
+                                                        )
+                                                    })
+                                                }
+
+                                                {
+                                                    isModified &&
+                                                    <div className='flex items-center gap-3'>
+                                                        <button
+                                                            className='p-1.5 border border-gray-500 rounded-full transition-colors hover:bg-gray-100'
+                                                            onClick={() => {
+                                                                handleRowChangeDismiss(row);
+                                                            }}
+                                                        >
+                                                            <X className='size-4 text-gray-500' />
+                                                        </button>
+
+                                                        <button
+                                                            className='p-1.5 border border-gray-500 rounded-full transition-colors hover:bg-gray-100'
+                                                            onClick={() => {
+                                                                handleRowSave(row);
+                                                            }}
+                                                        >
+                                                            <Check className='size-4 text-gray-500' />
+                                                        </button>
+
+                                                    </div>
+                                                }
+                                            </div>
+                                        </td>
+                                    }
+
                                     {_columns.map((column) => {
 
 
@@ -650,77 +745,6 @@ export const Table = ({
                                             </td>
                                         )
                                     })}
-
-                                    {/* actions */}
-                                    {actions && actions.length > 0 && !row.disabled && editable &&
-                                        <td>
-                                            <div className='flex items-center gap-3 justify-end mr-2'>
-                                                {!isModified && actions && actions.length > 0 &&
-                                                    actions.map((action, aIdx) => {
-                                                        const otherProps = {};
-                                                        let Icon = Pencil;
-                                                        if (action === 'edit') Icon = Edit2;
-                                                        if (action === 'delete') Icon = Trash;
-                                                        if (action === 'view') Icon = ArrowBigRight;
-                                                        if (action === 'preview') Icon = Eye;
-                                                        if (action === 'custom' && action.Icon) Icon = action.Icon;
-
-                                                        const func = action === 'edit'
-                                                            ? handleActionEdit
-                                                            : action === 'delete'
-                                                                ? handleActionDelete
-                                                                : action === 'preview'
-                                                                    ? handleActionPreview
-                                                                    : () => { };
-
-                                                        let Comp = null;
-                                                        if (action === 'view' && linkPrefix && row.id) {
-                                                            otherProps.href = `${linkPrefix || pathname}/${row.id}`;
-
-                                                            Comp = Link;
-                                                        } else {
-                                                            Comp = 'button';
-                                                        }
-
-                                                        return (
-                                                            <Comp
-                                                                key={aIdx}
-                                                                onClick={() => func(row)}
-                                                                className='p-1.5 bg-gray-200 border border-gray-100 rounded-md hover:bg-gray-300 transition-colors '
-                                                                {...otherProps}
-                                                            >
-                                                                <Icon className={`size-4 ${action === 'delete' ? 'text-red-500' : 'text-gray-500'}`} />
-                                                            </Comp>
-                                                        )
-                                                    })
-                                                }
-
-                                                {
-                                                    isModified &&
-                                                    <div className='flex items-center gap-3'>
-                                                        <button
-                                                            className='p-1.5 border border-gray-500 rounded-full transition-colors hover:bg-gray-100'
-                                                            onClick={() => {
-                                                                handleRowChangeDismiss(row);
-                                                            }}
-                                                        >
-                                                            <X className='size-4 text-gray-500' />
-                                                        </button>
-
-                                                        <button
-                                                            className='p-1.5 border border-gray-500 rounded-full transition-colors hover:bg-gray-100'
-                                                            onClick={() => {
-                                                                handleRowSave(row);
-                                                            }}
-                                                        >
-                                                            <Check className='size-4 text-gray-500' />
-                                                        </button>
-
-                                                    </div>
-                                                }
-                                            </div>
-                                        </td>
-                                    }
                                 </tr>
                             )
                         })}
@@ -764,7 +788,7 @@ export const Table = ({
                                     multiple: col.multiple || false,
                                     searchable: col.searchable || false,
                                     clearable: col.clearable !== false,
-                                    placeholder: col.placeholder || `Enter ${col.title.toLowerCase()}...`,
+                                    placeholder: getPlcHolder(col),
                                     showTime: col.showTime || false,
                                     format: col.format || 'YYYY-MM-DD',
                                     rows: col.rows || 3,

@@ -1,3 +1,4 @@
+ 
 export const isFilePath = (path) => {
     let rs = false;
     try {
@@ -179,5 +180,16 @@ export const toNumLocalString = (num) => {
     } catch (error) {
         console.log('toNumLocalString error ==> ', error);
         return num;
+    }
+}
+
+
+export const generateName = (prefixStr = 'it-') => {
+    try {
+        const randomStr = Math.random().toString(36).substring(2, 8);
+        return `${prefixStr}_${randomStr}`;
+    } catch (error) {
+        console.log('generateName error ==> ', error);
+        return `${prefixStr}_error`;
     }
 }

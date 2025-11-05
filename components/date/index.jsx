@@ -39,7 +39,7 @@ const CustomInput = forwardRef(({ value, onClick, placeholder, disabled, error, 
                         <X className="w-4 h-4" />
                     </button>
                 )}
-                <Calendar className="w-4 h-4 text-yellow-400" />
+                <Calendar className="w-4 h-4 text-gray-400" />
             </div>
         </div>
     </div>

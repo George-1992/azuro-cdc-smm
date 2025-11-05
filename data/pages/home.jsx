@@ -20,14 +20,14 @@ export default function Home({ params, pathname, searchParams, session, user, ac
             description: 'Active marketing campaigns',
             link: '/campaigns',
         },
-        {
-            name: 'week_templates',
-            label: 'Week Templates',
-            icon: CalendarSyncIcon,
-            color: 'bg-green-500',
-            description: 'Weekly content templates',
-            link: '/week-templates',
-        },
+        // {
+        //     name: 'week_templates',
+        //     label: 'Week Templates',
+        //     icon: CalendarSyncIcon,
+        //     color: 'bg-green-500',
+        //     description: 'Weekly content templates',
+        //     link: '/week-templates',
+        // },
         {
             name: 'avatars',
             label: 'Avatars',

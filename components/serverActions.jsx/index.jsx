@@ -406,3 +406,31 @@ export const saSendEmail = async ({
     return resObj;
 }
 
+
+
+export const saCreatePublication = ({ data, org }) => {
+    let resObj = {
+        success: false,
+        warning: false,
+        message: '',
+        data: null,
+    }
+    try {
+
+        let toSaveData = { ...data }
+        toSaveData.org_id = org.id;
+
+        // create publication
+        const createdPublication = Prisma.publications.create({
+            data: toSaveData
+        });
+        resObj.success = true;
+        resObj.message = 'Publication created successfully';
+        resObj.data = createdPublication;
+        return resObj;
+    } catch (error) {
+        console.error(error);
+        resObj.message = error.message || 'An error occurred';
+        resObj.warning = true;
+    }
+}
