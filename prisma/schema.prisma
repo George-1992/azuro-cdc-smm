@@ -166,24 +166,19 @@ model campaigns {
   name               String
   status             String  @default("draft")
   language           String? @default("en")
+  content_type       String  @default("post")
   global_inspiration String?
-
-  avatar_id String?
-  avatar    avatars? @relation(fields: [avatar_id], references: [id], onDelete: Cascade)
-  source_id String?
-  source    sources? @relation(fields: [source_id], references: [id], onDelete: Cascade)
-
-  weekday          String
-  time             String
-  content_type     String @default("post")
-  target_platforms Json?  @default("[]")
 
   scheduled_at DateTime?
   published_at DateTime?
 
+  agenda  Json? @default("[]")
   configs Json? @default("{}")
 
   publications publications[]
+  avatar_id    String?
+  avatar       avatars?       @relation(fields: [avatar_id], references: [id], onDelete: Cascade)
+  sources      sources[]
 
   org_id String
   org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
@@ -203,7 +198,8 @@ model publications {
   language           String? @default("en")
   title              String? @default("")
   description        String? @default("")
-  media_urls         String? @default("")
+  media              String? @default("")
+  script             String? @default("")
   message            String? @default("")
   notes              String? @default("")
   global_inspiration String? @default("")
@@ -216,8 +212,7 @@ model publications {
   campaign    campaigns? @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
   avatar_id   String?
   avatar      avatars?   @relation(fields: [avatar_id], references: [id], onDelete: Cascade)
-  source_id   String?
-  source      sources?   @relation(fields: [source_id], references: [id], onDelete: Cascade)
+  sources     sources[]
 
   org_id String
   org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)

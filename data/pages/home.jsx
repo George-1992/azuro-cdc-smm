@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { saGetItems } from '@/components/serverActions.jsx';
-import { Database, MegaphoneIcon, CalendarSyncIcon, SquareUser, SquareUserIcon, LibraryBigIcon, SquareArrowOutUpRightIcon } from 'lucide-react';
+import { Database, MegaphoneIcon, CalendarSyncIcon, SquareUser, SquareUserIcon, LibraryBigIcon, SquareArrowOutUpRightIcon, NewspaperIcon } from 'lucide-react';
 import Loading from '@/components/other/loading';
 import Link from 'next/link';
 
@@ -44,6 +44,14 @@ export default function Home({ params, pathname, searchParams, session, user, ac
             description: 'Content sources and inspiration',
             link: '/sources',
         },
+        {
+            name: 'publications',
+            label: 'Publications',
+            icon: NewspaperIcon,
+            color: 'bg-amber-500',
+            description: 'Content publications and articles',
+            link: '/publications',
+        },
     ];
 
     // Fetch counts for each collection
@@ -81,7 +89,7 @@ export default function Home({ params, pathname, searchParams, session, user, ac
     }, [org?.id]);
 
     return (
-        <div className="container-main flex flex-col gap-6">
+        <div className="container-main flex flex-col gap-6 bg-">
             <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-semibold">Dashboard</h1>
                 <div className="text-sm text-gray-500">

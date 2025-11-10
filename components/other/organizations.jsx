@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { Dropdown } from "@/components/other/dropdown";
 import { BuildingIcon, ChevronsUpDownIcon, ListChevronsUpDownIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/libs/utils";
 
-export default function Organizations({ session, user, account, org, orgs }) {
+export default function Organizations({ session, user, account, isCollapsed = false, org, orgs }) {
     // console.log('org ==> ', org);
 
     const [orgId, setOrgId] = useState(org ? org.id : null);
@@ -38,16 +39,19 @@ export default function Organizations({ session, user, account, org, orgs }) {
         <Dropdown fixed={true} align="right" className="w-full py-2">
             <div
                 data-type="trigger"
-                className="w-full h-14 p-2 flex gap-1 items-center justify-between text-sm bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                className={cn(
+                    'w-full h-14 flex gap-1 items-center justify-between text-sm bg-gray-200 rounded-md hover:bg-gray-300 transition-colors',
+                    isCollapsed ? 'justify-center' : 'p-2'
+                )}
             >
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center justify-center">
                     <BuildingIcon className="size-5" />
-                    <span>
+                    <span className={isCollapsed ? 'hidden' : ''}>
                         {theOrg && theOrg.name ? theOrg.name : 'No Organization'}
                     </span>
                 </div>
 
-                <ChevronsUpDownIcon className="size-4" />
+                {!isCollapsed && <ChevronsUpDownIcon className="size-4" />}
             </div>
             <div data-type="content" className="w-64 right-0">
                 <div className="py-1">

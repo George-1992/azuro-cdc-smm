@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Search, ChevronUp, ChevronDown, Edit2, Check, X, ChevronLeft, ChevronRight, CircleX, Pencil, Trash, PlusIcon, ArrowBigRight, Eye } from 'lucide-react';
-import { PopupModal } from '@/components/other/modals';
+import { PopupModal, ExpandableModal } from '@/components/other/modals';
 import FormBuilder from '@/components/formBuilder';
 import { notify } from '@/components/sonnar/sonnar';
 import DateInput from '@/components/date';
@@ -12,6 +12,7 @@ import DateDisplay from '@/components/date/DateDisplay';
 import { widthMap } from './helper';
 import Link from 'next/link';
 import FilterAndViews from '@/components/table/parts/tableFilter';
+import { cn } from '@/libs/utils';
 
 const passwordField = {
     name: 'password',
@@ -51,6 +52,7 @@ export const Table = ({
     account = {},
     user = {},
 
+    modalType = 'popup', // 'popup' or 'expandable'
 
     onChange = (updatedData) => { console.log('updatedData:', updatedData); },
     onRowChange = (rowIndex, newRowData) => { console.log('Row Change:', rowIndex, newRowData); return { success: false } },
@@ -106,6 +108,7 @@ export const Table = ({
 
     const [_previewItem, _setPreviewItem] = useState(null);
 
+    const Modal = modalType === 'expandable' ? ExpandableModal : PopupModal;
 
     const modifiedRowIds = _originalData
         .filter(origRow => {
@@ -505,8 +508,8 @@ export const Table = ({
                     <thead className='border-b border-gray-200 bg-gray-50'>
                         <tr content=''>
                             {editable && actions && actions.length > 0 &&
-                                <th>
-                                    <div className='px-2 py-2 text-sm font-medium text-gray-500 flex justify-start'>
+                                <th className='w-32'>
+                                    <div className='w-32 px-2 py-2 text-sm font-medium text-gray-500 flex justify-start'>
                                         Actions
                                     </div>
                                 </th>
@@ -549,8 +552,8 @@ export const Table = ({
 
                                     {/* actions */}
                                     {editable && actions && actions.length > 0 && !row.disabled && editable &&
-                                        <td>
-                                            <div className='flex items-center gap-3 justify-start ml-2'>
+                                        <td className='w-32'>
+                                            <div className='w-32 flex items-center gap-3 justify-start ml-2'>
                                                 {!isModified && actions && actions.length > 0 &&
                                                     actions.map((action, aIdx) => {
                                                         const otherProps = {};
@@ -763,10 +766,14 @@ export const Table = ({
             {/* combined modal for edit/add */}
             {
                 (_editingItemMain || _newItem) && (
-                    <PopupModal
+                    <Modal
                         isOpen={true}
                         onClose={handleModalClose}
-                        className='w-96 md:w-[600px]'
+                        className={cn(
+                            modalType === 'expandable'
+                                ? 'w-11/12 max-w-5xl'
+                                : 'w-96 md:w-[600px]',
+                        )}
                     // title={_editingItemMain ? 'Edit Item' : 'Add New Item'}
                     >
                         <FormBuilder
@@ -801,12 +808,12 @@ export const Table = ({
                             disabled={_isActionLoading}
                         />
                         {_isActionLoading && <div className='animate-shimmer'></div>}
-                    </PopupModal>
+                    </Modal>
                 )
             }
             {
                 _deletingItem && (
-                    <PopupModal
+                    <Modal
                         isOpen={true}
                         onClose={() => _setDeletingItem(null)}
                     >
@@ -832,12 +839,12 @@ export const Table = ({
                         </div>
                         {_isActionLoading && <div className='animate-shimmer'></div>}
 
-                    </PopupModal>
+                    </Modal>
                 )
             }
             {
                 _previewItem && (
-                    <PopupModal
+                    <Modal
                         isOpen={true}
                         title={`Preview  ${_previewItem.name || _previewItem.title || 'Content'}`}
                         onClose={() => _setPreviewItem(null)}
@@ -889,7 +896,7 @@ export const Table = ({
                                 </button>
                             </div>
                         </div>
-                    </PopupModal>
+                    </Modal>
                 )
             }
 

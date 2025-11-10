@@ -33,11 +33,46 @@ export default function FormBuilder({
     )
 
 
+    // if field has getValue func call it to set initial value
+    const handleGetValue = (field) => {
+        try {
+            let value = _formData[field.name];
+            if (field.getValue && typeof field.getValue === 'function') {
+                value = field.getValue(_formData);
+            }
+            return value;
+        } catch (error) {
+            console.error('FormBuilder handleGetValue error ==> ', error);
+        }
+    };
+
+    const handlesSetValue = (currentFormData, name, value) => {
+        let data = { ...currentFormData };
+        const thisField = fields.find(f => f.name === name);
+
+        if (thisField.setValue && typeof thisField.setValue === 'function') {
+            const func = thisField.setValue;
+            data = func(data, value);
+            // console.log(' func(data, value): ', func(data, value));
+
+        } else {
+            data[name] = value;
+        }
+
+        return data;
+    }
+
+
+
     //if any fields func is defined call it to update dependent fields
     const handleFieldsWithFunc = (data) => {
         fields.forEach(field => {
-            if (field.func && typeof field.func === 'function') {
-                const newValue = field.func(data);
+            if (
+                (field.func && typeof field.func === 'function')
+                || (field.setValue && typeof field.setValue === 'function')
+            ) {
+                const func = field.func || field.setValue;
+                const newValue = func(data);
                 // console.log('field: ',field);
                 if (newValue !== undefined) {
                     data[field.name] = newValue;
@@ -50,13 +85,14 @@ export default function FormBuilder({
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        let av = value;
-        let newFormData = { ..._formData, [name]: av }
-        // apply field functions
+        // let av = value;
+        // let newFormData = { ..._formData, [name]: av }
 
-        handleFieldsWithFunc(newFormData);
-        _setFormData(newFormData);
-        onChange(newFormData);
+        const nfd = handlesSetValue(_formData, name, value);
+        // console.log('newFormData: ', nfd);
+
+        _setFormData(nfd);
+        onChange(nfd);
     };
 
     const formSubmit = (e) => {
@@ -132,9 +168,7 @@ export default function FormBuilder({
         }
     }, [str1]);
 
-    if (!fields) {
-        return null;
-    }
+
 
     // update isLoading state if prop changes
     useEffect(() => {
@@ -142,7 +176,9 @@ export default function FormBuilder({
     }, [isLoading]);
 
 
-
+    if (!fields) {
+        return null;
+    }
     // console.log('FormBuilder renderOrder ==> ', _renderOrder);
     // console.log('_formData: ', _formData);
     // console.log('_formData: ', _formData);
@@ -158,7 +194,6 @@ export default function FormBuilder({
                             const rowFields = fields.filter(f => rowItems.includes(f.name) && !f.hidden);
 
                             if (!rowFields || rowFields.length === 0) return null;
-
 
 
                             return (
@@ -194,12 +229,12 @@ export default function FormBuilder({
                                                     {field.EditComponent || field.Component
                                                         ? (field.EditComponent
                                                             ? <field.EditComponent
-                                                                value={_formData[field.name]}
+                                                                value={handleGetValue(field)}
                                                                 row={_formData}
                                                                 onChange={handleInputChange}
                                                             />
                                                             : <field.Component
-                                                                value={_formData[field.name]}
+                                                                value={handleGetValue(field)}
                                                                 row={_formData}
                                                             />
                                                         )
@@ -209,7 +244,7 @@ export default function FormBuilder({
                                                                     <Select
                                                                         id={field.name}
                                                                         name={field.name}
-                                                                        value={_formData[field.name] || (field.multiple ? [] : '')}
+                                                                        value={handleGetValue(field) || (field.multiple ? [] : '')}
                                                                         onChange={handleInputChange}
                                                                         options={field.options || []}
                                                                         placeholder={field.placeholder}
@@ -232,7 +267,7 @@ export default function FormBuilder({
                                                                         <DateInput
                                                                             id={field.name}
                                                                             name={field.name}
-                                                                            value={_formData[field.name] || ''}
+                                                                            value={handleGetValue(field) || ''}
                                                                             onChange={handleInputChange}
                                                                             placeholder={field.placeholder}
                                                                             disabled={_isLoading || field.disabled}
@@ -248,7 +283,7 @@ export default function FormBuilder({
                                                                     )
                                                                     : field.type === 'notesArray' ? (
                                                                         <NotesArray
-                                                                            value={_formData[field.name] || []}
+                                                                            value={handleGetValue(field) || []}
                                                                             onChange={(newValue) => {
                                                                                 const newFormData = { ..._formData, [field.name]: newValue };
                                                                                 _setFormData(newFormData);
@@ -269,7 +304,7 @@ export default function FormBuilder({
                                                                                     required={field.required}
                                                                                     onChange={handleInputChange}
                                                                                     disabled={_isLoading || field.disabled}
-                                                                                    value={_formData[field.name] || ''}
+                                                                                    value={handleGetValue(field) || ''}
                                                                                     rows={field.rows || 3}
                                                                                 />
                                                                             )
@@ -283,7 +318,7 @@ export default function FormBuilder({
                                                                                     required={field.required}
                                                                                     onChange={handleInputChange}
                                                                                     disabled={_isLoading || field.disabled}
-                                                                                    value={_formData[field.name] || ''}
+                                                                                    value={handleGetValue(field) || ''}
                                                                                     autoComplete={field.autoComplete || ''}
                                                                                 />
                                                                             )}
@@ -294,12 +329,12 @@ export default function FormBuilder({
                                                     }
 
 
-
                                                     {_formErrors[field.name] && !['select', 'date', 'datetime', 'notesArray'].includes(field.type) && (
                                                         <p className="text-sm text-red-500 my-1 expanding">
                                                             {_formErrors[field.name]}
                                                         </p>
                                                     )}
+
                                                 </div>
                                             </div>
                                         )

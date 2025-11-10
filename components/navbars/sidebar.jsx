@@ -4,6 +4,7 @@
 import { SignoutEl } from "@/components/auth";
 import Organizations from "@/components/other/organizations";
 import { pagesMapSidebar } from "@/data/pages";
+import { cn } from "@/libs/utils";
 import {
     ChevronRight,
     Home, ListChevronsUpDown, LogOut,
@@ -123,7 +124,10 @@ export default function Sidebar({ items = defaultItems, pathname = '', searchPar
         <div className={`relative h-screen border-r-2 border-gray-200 bg-gray-50 flex flex-col flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'
             }`}>
             {/* Header */}
-            <div className={`py-3 px-3 h-28 overflow-hidden border-b-[1.5px] border-gray-200 ${isCollapsed ? '' : ''}`}>
+            <div className={cn(
+                'w-full h-28 overflow-hidden border-b-[1.5px] border-gray-200 flex flex-col',
+                isCollapsed ? 'items-center justify-center py-1 px-1' : 'items-start py-3 px-3',
+            )}>
                 <div className="flex items-center justify-between ">
                     <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
                         <Image
@@ -148,9 +152,7 @@ export default function Sidebar({ items = defaultItems, pathname = '', searchPar
                     </button>
                 </div>
 
-                <div className="">
-                    <Organizations session={session} user={user} account={account} isCollapsed={isCollapsed} orgs={orgs} org={org} />
-                </div>
+                <Organizations session={session} user={user} account={account} isCollapsed={isCollapsed} orgs={orgs} org={org} />
 
             </div>
 

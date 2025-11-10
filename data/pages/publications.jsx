@@ -214,6 +214,8 @@ export default function Publications({ pathname, user, account, session, org }) 
         body();
     }, [org]);
 
+
+    
     return (
         <div className="container-main w-full flex flex-col gap-6">
             <h1 className="text-2xl flex items-center gap-2">
@@ -233,7 +235,7 @@ export default function Publications({ pathname, user, account, session, org }) 
                     editRenderOrder={[
                         ['name', 'status'],
                         ['title'],
-                        ['media_urls'],
+                        ['media'],
                         ['scheduled_at'],
                         ['description'],
                         ['notes'],
@@ -255,7 +257,7 @@ export default function Publications({ pathname, user, account, session, org }) 
                             type: 'select',
                             options: statusOptions,
                             required: true,
-                            defaultValue: 'planned',
+                            defaultValue: 'inReview',
                             Component: StatusItem
                         },
                         {
@@ -272,24 +274,28 @@ export default function Publications({ pathname, user, account, session, org }) 
                             width: 'w-64',
                             type: 'textarea',
                             placeholder: 'Social media title...',
-                            rows: 2
                         },
                         {
                             key: 'description',
                             title: 'Description',
                             width: 'w-64',
                             type: 'textarea',
-                            placeholder: 'Full content description...',
-                            rows: 3
+                            placeholder: 'Enter description...',
                         },
                         {
-                            key: 'media_urls',
-                            title: 'Media URLs',
+                            key: 'script',
+                            title: 'Script',
+                            width: 'w-64',
+                            type: 'textarea',
+                            placeholder: 'Enter script...',
+                        },
+                        {
+                            key: 'media',
+                            title: 'Media',
                             width: 'w-64',
                             // type: 'textarea',
                             placeholder: 'Enter media URLs...',
                             validationKey: 'url',
-                            rows: 2
                         },
                         {
                             key: 'notes',
@@ -297,7 +303,6 @@ export default function Publications({ pathname, user, account, session, org }) 
                             type: 'textarea',
                             width: 'w-48',
                             placeholder: 'Internal notes...',
-                            rows: 2
                         },
                     ]}
                     data={_data}

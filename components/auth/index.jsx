@@ -393,7 +393,7 @@ export default function AuthEl({ type = 'signin', pathname, searchParams }) {
                             type === 'signin' &&
                             <div className="flex justify-center items-start ">
                                 <Link href="/auth/signup" className="text-sm text-gray-500 hover:underline">
-                                    Don't have an account? Sign up
+                                    {'Don\'t have an account? Sign up'}
                                 </Link>
                             </div>
                         }

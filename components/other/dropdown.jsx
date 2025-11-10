@@ -123,9 +123,44 @@ export const Dropdown = ({
         if (fixed && !_isOpen) {
             // Calculate position for fixed positioning
             const rect = event.currentTarget.getBoundingClientRect();
+            const dropdownWidth = 192; // w-48 = 192px
+            const viewportWidth = window.innerWidth;
+            
+            let leftPosition;
+            if (align === 'left') {
+                leftPosition = rect.left + window.scrollX;
+                // Prevent going off right edge
+                if (leftPosition + dropdownWidth > viewportWidth + window.scrollX) {
+                    leftPosition = viewportWidth + window.scrollX - dropdownWidth - 8;
+                }
+            } else if (align === 'right') {
+                leftPosition = rect.right + window.scrollX - dropdownWidth;
+                // Prevent going off left edge
+                if (leftPosition < window.scrollX) {
+                    leftPosition = window.scrollX + 8;
+                }
+            } else if (align === 'center') {
+                leftPosition = rect.left + window.scrollX + (rect.width / 2) - (dropdownWidth / 2);
+                // Prevent going off edges
+                if (leftPosition < window.scrollX) {
+                    leftPosition = window.scrollX + 8;
+                } else if (leftPosition + dropdownWidth > viewportWidth + window.scrollX) {
+                    leftPosition = viewportWidth + window.scrollX - dropdownWidth - 8;
+                }
+            } else {
+                // Default to right alignment
+                leftPosition = rect.right + window.scrollX - dropdownWidth;
+                if (leftPosition < window.scrollX) {
+                    leftPosition = window.scrollX + 8;
+                }
+            }
+            
+            // Ensure minimum left position
+            leftPosition = Math.max(leftPosition, window.scrollX + 8);
+            
             setPosition({
                 top: rect.bottom + window.scrollY + 8, // 8px offset like mt-2
-                left: rect.right + window.scrollX - 192 // 192px is w-48 width, align to right
+                left: leftPosition
             });
         }
         _setIsOpen(!_isOpen);
@@ -150,7 +185,9 @@ export const Dropdown = ({
                                 ? 'fixed'
                                 : 'absolute mt-2'
                             }
-                            ${align === 'right' && !fixed ? 'right-0' : ''}
+                            ${!fixed && align === 'right' ? 'right-0' : ''}
+                            ${!fixed && align === 'left' ? 'left-0' : ''}
+                            ${!fixed && align === 'center' ? 'left-1/2 transform -translate-x-1/2' : ''}
                             `}
                         style={fixed ? {
                             top: `${position.top}px`,

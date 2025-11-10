@@ -28,15 +28,13 @@ const statusOptions = [
 
 
 
-export default function OneShot({ org }) {
+export default function OneShot({ org, onSuccess = () => { } }) {
 
     const [_data, _setData] = useState({
         name: generateName('oneshot'),
-        language: 'en',
-        content_type: 'post',
-        status: 'planned',
-        avatar_id: null,
-        source_id: null,
+        language: org.language || org.configs?.language || 'en',
+        content_type: 'video',
+        status: 'inReview',
         scheduled_at: new Date().toISOString(), // ISO string
         global_inspiration: '',
         target_platforms: [],
@@ -80,15 +78,16 @@ export default function OneShot({ org }) {
     };
 
     const handleSubmit = async (newData) => {
-        console.log('Publications data changed: ', newData);
+        // console.log('Publications data changed: ', newData);
 
         try {
             // Call the create publication API
             const response = await saCreatePublication({ data: newData, org: org });
-            console.log('response: ',response);
-            
+            console.log('response: ', response);
+
             if (response?.success) {
-                notify({ type: 'success', message: 'One Shot created successfully!' });
+                notify({ type: 'success', message: 'Created successfully!' });
+                onSuccess(_data);
             } else {
                 notify({ type: 'error', message: response?.message || 'Failed to create One Shot.' });
             }
@@ -97,6 +96,17 @@ export default function OneShot({ org }) {
             notify({ type: 'error', message: error?.message || 'Failed to create One Shot.' });
         }
     }
+
+    // on fast mode change update status
+    //  if its fast mode, set status to ready
+    useEffect(() => {
+        if (_isFastMode && _data.status !== 'ready') {
+            _setData(prevData => ({
+                ...prevData,
+                status: 'ready'
+            }));
+        }
+    }, [_isFastMode]);
 
     // initial load, fetch data
     useEffect(() => {
@@ -147,177 +157,187 @@ export default function OneShot({ org }) {
             </div>
             <div className="bg-blue-50 p-2 rounded-md">
                 <p>
-                    To enable editing, please disable Fast Mode.
+                    Toggle fast mode to review and edit idea
                 </p>
             </div>
 
             <div className="relative p-1 my-3">
-                <FormBuilder
-                    className=""
-                    formData={_data}
-                    submitButtonText="Create One Shot"
-                    onSubmit={(newData) => {
-                        handleSubmit(newData);
-                    }}
-                    renderOrder={[
-                        ['name', 'scheduled_at'],
-                        ['language', 'content_type'],
-                        ['avatar_id', 'source_id'],
-                        ['scheduled_at'],
-                        ['global_inspiration'],
-                        ['agendaHeading'],
-                        ['weekday', 'time'],
-                        ['target_platforms'],
-                        ['spacerHeading'],
-                    ]}
-                    fields={[
-                        {
-                            name: 'name',
-                            label: 'Name',
-                            type: 'text',
-                            required: true,
-                            validateKey: 'length',
-                            placeholder: 'Enter campaign name',
-                            defaultValue: _data.name,
-                            disabled: _isFastMode,
-                        },
-                        {
-                            name: 'scheduled_at',
-                            label: 'Scheduled At',
-                            type: 'datetime',
-                            required: true,
-                            validateKey: 'length',
-                            placeholder: 'Enter scheduled date and time (ISO format)',
-                            disabled: _isFastMode,
-                        },
-                        {
-                            name: 'language',
-                            label: 'Language',
-                            width: 'w-32',
-                            type: 'select',
-                            required: true,
-                            options: languageOptions,
-                            defaultValue: 'en',
-                            disabled: _isFastMode,
-                            placeholder: 'Select language'
-                        },
-                        {
-                            name: 'content_type',
-                            label: 'Content Type',
-                            width: 'w-32',
-                            type: 'select',
-                            options: contentTypeOptions,
-                            required: true,
-                            disabled: _isFastMode,
-                            placeholder: 'Select type',
-                            Component: (props) => {
-                                // console.log('props: ', props);
-                                return <div className="flex gap-2 items-center">
-                                    {props.value === 'video' && <VideoIcon className="size-5" />}
-                                    {props.value === 'post' && <StickyNoteIcon className="size-5" />}
-                                    {props.value || 'N/A'}
-                                </div>;
+                {_isFastMode === false &&
+                    <FormBuilder
+                        className=""
+                        formData={_data}
+                        submitButtonText="Create One Shot"
+                        onSubmit={(newData) => {
+                            handleSubmit(newData);
+                        }}
+                        renderOrder={[
+                            ['language', 'content_type'],
+                            ['avatar_id', 'source_id'],
+                            ['global_inspiration'],
+                            ['agendaHeading'],
+                            ['weekday', 'time'],
+                            ['target_platforms'],
+                            ['spacerHeading'],
+                        ]}
+                        fields={[
+                            // {
+                            //     name: 'name',
+                            //     label: 'Name',
+                            //     type: 'text',
+                            //     required: true,
+                            //     validateKey: 'length',
+                            //     placeholder: 'Enter campaign name',
+                            //     defaultValue: _data.name,
+                            //     disabled: _isFastMode,
+                            // },
+                            // {
+                            //     name: 'scheduled_at',
+                            //     label: 'Scheduled At',
+                            //     type: 'datetime',
+                            //     required: true,
+                            //     validateKey: 'length',
+                            //     placeholder: 'Enter scheduled date and time (ISO format)',
+                            //     disabled: _isFastMode,
+                            // },
+                            {
+                                name: 'language',
+                                label: 'Language',
+                                width: 'w-32',
+                                type: 'select',
+                                required: true,
+                                options: languageOptions,
+                                defaultValue: 'en',
+                                disabled: _isFastMode,
+                                placeholder: 'Select language'
                             },
-                            EditComponent: (props) => {
-                                if (_isFastMode) {
+                            {
+                                name: 'content_type',
+                                label: 'Content Type',
+                                width: 'w-32',
+                                type: 'select',
+                                options: contentTypeOptions,
+                                required: true,
+                                disabled: _isFastMode,
+                                placeholder: 'Select type',
+                                Component: (props) => {
+                                    // console.log('props: ', props);
                                     return <div className="flex gap-2 items-center">
                                         {props.value === 'video' && <VideoIcon className="size-5" />}
                                         {props.value === 'post' && <StickyNoteIcon className="size-5" />}
                                         {props.value || 'N/A'}
                                     </div>;
-                                }
-                                return <Dropdown className="">
-                                    <div
-                                        data-type="trigger"
-                                        className="w-full p-1 flex gap-1 items-center justify-between text-sm bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
-                                    >
-                                        <div className="flex gap-2 items-center">
+                                },
+                                EditComponent: (props) => {
+                                    if (_isFastMode) {
+                                        return <div className="flex gap-2 items-center">
+                                            {props.value === 'video' && <VideoIcon className="size-5" />}
+                                            {props.value === 'post' && <StickyNoteIcon className="size-5" />}
+                                            {props.value || 'N/A'}
+                                        </div>;
+                                    }
+                                    return <Dropdown className="">
+                                        <div
+                                            data-type="trigger"
+                                            className="w-full p-1 flex gap-1 items-center justify-between text-sm bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                                        >
+                                            <div className="flex gap-2 items-center">
 
-                                            {
-                                                props.value === 'video' ? <VideoIcon className="size-5" /> :
-                                                    props.value === 'post'
-                                                        ? <StickyNoteIcon className="size-5" />
-                                                        : <CircleSlashIcon className="size-5" />
-                                            }
-                                            <span>
-                                                {props.value || 'N/A'}
-                                            </span>
+                                                {
+                                                    props.value === 'video' ? <VideoIcon className="size-5" /> :
+                                                        props.value === 'post'
+                                                            ? <StickyNoteIcon className="size-5" />
+                                                            : <CircleSlashIcon className="size-5" />
+                                                }
+                                                <span>
+                                                    {props.value || 'N/A'}
+                                                </span>
+                                            </div>
+
+                                            <ChevronsUpDownIcon className="size-4" />
                                         </div>
 
-                                        <ChevronsUpDownIcon className="size-4" />
-                                    </div>
-
-                                    <div data-type="content" className="w-28 p-2">
-                                        <div className="w-40 flex flex-col gap-2">
-                                            {
-                                                contentTypeOptions.map(option => (
-                                                    <div
-                                                        key={option.value}
-                                                        className={`w-full p-1 flex gap-2 items-center justify-start text-sm rounded-md hover:bg-gray-200 transition-colors ${props.value === option.value ? 'bg-gray-200' : 'bg-gray-100'}`}
-                                                        onClick={() => {
-                                                            if (props.onChange) {
-                                                                props.onChange({
-                                                                    target: {
-                                                                        name: 'content_type',
-                                                                        value: option.value
-                                                                    }
-                                                                })
+                                        <div data-type="content" className="w-28 p-2">
+                                            <div className="w-40 flex flex-col gap-2">
+                                                {
+                                                    contentTypeOptions.map(option => (
+                                                        <div
+                                                            key={option.value}
+                                                            className={`w-full p-1 flex gap-2 items-center justify-start text-sm rounded-md hover:bg-gray-200 transition-colors ${props.value === option.value ? 'bg-gray-200' : 'bg-gray-100'}`}
+                                                            onClick={() => {
+                                                                if (props.onChange) {
+                                                                    props.onChange({
+                                                                        target: {
+                                                                            name: 'content_type',
+                                                                            value: option.value
+                                                                        }
+                                                                    })
+                                                                }
+                                                            }}
+                                                        >
+                                                            {
+                                                                option.value === 'video' ? <VideoIcon className="size-5" /> :
+                                                                    option.value === 'post'
+                                                                        ? <StickyNoteIcon className="size-5" />
+                                                                        : <CircleSlashIcon className="size-5" />
                                                             }
-                                                        }}
-                                                    >
-                                                        {
-                                                            option.value === 'video' ? <VideoIcon className="size-5" /> :
-                                                                option.value === 'post'
-                                                                    ? <StickyNoteIcon className="size-5" />
-                                                                    : <CircleSlashIcon className="size-5" />
-                                                        }
-                                                        <span>  {option.label}</span>
-                                                    </div>
-                                                ))
-                                            }
+                                                            <span>  {option.label}</span>
+                                                        </div>
+                                                    ))
+                                                }
+                                            </div>
                                         </div>
-                                    </div>
-                                </Dropdown>
-                            }
-                        },
-                        {
-                            name: 'avatar_id',
-                            label: 'Avatar',
-                            width: 'w-32',
-                            type: 'select',
-                            required: false,
-                            options: avatarOptions,
-                            placeholder: 'Select avatar',
-                            disabled: _isFastMode,
-                            clearable: true
-                        },
-                        {
-                            name: 'source_id',
-                            label: 'Source',
-                            width: 'w-32',
-                            type: 'select',
-                            required: false,
-                            options: sourceOptions,
-                            placeholder: 'Select source',
-                            disabled: _isFastMode,
-                            clearable: true
-                        },
-                        {
-                            name: 'global_inspiration',
-                            label: 'Inspiration',
-                            type: 'textarea',
-                            required: false,
-                            width: 'w-32',
-                            disabled: _isFastMode,
-                            placeholder: 'Campaign inspiration...',
-                            rows: 2
-                        },
+                                    </Dropdown>
+                                }
+                            },
+                            // {
+                            //     name: 'avatar_id',
+                            //     label: 'Avatar',
+                            //     width: 'w-32',
+                            //     type: 'select',
+                            //     required: false,
+                            //     options: avatarOptions,
+                            //     placeholder: 'Select avatar',
+                            //     disabled: _isFastMode,
+                            //     clearable: true
+                            // },
+                            // {
+                            //     name: 'source_id',
+                            //     label: 'Source',
+                            //     width: 'w-32',
+                            //     type: 'select',
+                            //     required: false,
+                            //     options: sourceOptions,
+                            //     placeholder: 'Select source',
+                            //     disabled: _isFastMode,
+                            //     clearable: true
+                            // },
+                            {
+                                name: 'global_inspiration',
+                                label: 'Inspiration with idea',
+                                type: 'textarea',
+                                required: false,
+                                width: 'w-32',
+                                disabled: _isFastMode,
+                                placeholder: 'Campaign inspiration...',
+                                rows: 2
+                            },
 
-                    ]}
-                />
+                        ]}
+                    />
+                }
+
+
 
                 {_isFastMode &&
-                    <div className="absolute top-0 left-0 w-full h-[88%] opacity-30 bg-gray-900 rounded-md">
+                    <div className="w-full flex justify-end">
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => {
+                                handleSubmit(_data);
+                            }}
+                        >
+                            Create One Shot
+                        </button>
                     </div>
                 }
             </div>

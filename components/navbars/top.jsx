@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Dropdown, DropdownTrigger, DropdownContent } from "@/components/other/dropdown";
-import { Settings, LogOut, Bell, WandSparklesIcon } from "lucide-react";
+import { Settings, LogOut, Bell, WandSparklesIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { SignoutEl } from "@/components/auth";
 import AlertBox from "@/components/other/alertBox";
@@ -78,10 +78,10 @@ export default function TopNav({ pathname, data, searchParams, session, user, ac
                             <p className="text-sm text-gray-500">{session?.email || 'No email'}</p>
                         </div>
                         <div className="py-1">
-                            {/* <Link href='/profile' className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <Link href='/profile' className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <UserIcon className="w-4 h-4" />
                                 Profile
-                            </Link> */}
+                            </Link>
                             <Link href='/settings' className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <Settings className="w-4 h-4" />
                                 Settings
@@ -103,7 +103,7 @@ export default function TopNav({ pathname, data, searchParams, session, user, ac
                 onClose={() => setIsOneShot(false)}
                 size='xl'
             >
-                <OneShot org={org} />
+                <OneShot org={org} onSuccess={() => setIsOneShot(false)} />
             </PopupModal>
         </div>
     );

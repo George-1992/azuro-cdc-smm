@@ -8,7 +8,7 @@ import { notify } from "@/components/sonnar/sonnar";
 import { useState, useEffect } from "react";
 import { ExpandableModal, PopupModal } from "@/components/other/modals";
 import Table from "@/components/table";
-import { makeFirstLetterUppercase } from "@/utils/other";
+import { makeFirstLetterUppercase, toDisplayStr } from "@/utils/other";
 import FormBuilder from "@/components/formBuilder";
 import { languageOptions, socialMediaPlatforms, webhookTypes } from "@/data/types";
 import Image from "next/image";
@@ -20,9 +20,34 @@ import { TabContainer, Tabs, TabsContent, TabsList, TabsTrigger } from "@/compon
 export default function Settings({ params, pathname, searchParams, session, user, account, org, orgs }) {
 
 
-    const blotato = {
-        apiKey: ''
+    const credentialProviders = {
+        blotato: {
+            label: 'Blotato',
+            name: 'blotato',
+            default: { apiKey: '' },
+            logo: '/images/other/blotato-logo.webp',
+        },
+        elevenLabs: {
+            label: 'ElevenLabs',
+            name: 'elevenLabs',
+            default: { apiKey: '', defaultVoiceId: '' },
+            logo: '/images/other/elevenlabs-logo.png',
+        },
+        fal: {
+            label: 'FAL',
+            name: 'fal',
+            default: { apiKey: '' },
+            logo: '/images/other/fal-logo.png',
+        },
+        openRouter: {
+            label: 'OpenRouter',
+            name: 'openRouter',
+            default: { apiKey: '' },
+            logo: '/images/other/openrouter-logo.png',
+        },
     }
+
+
     const webhooksDefault = {
         sources: '',
         avatars: ''
@@ -35,9 +60,15 @@ export default function Settings({ params, pathname, searchParams, session, user
     if (!preOrg.configs) {
         preOrg.configs = {};
     }
-    if (!preOrg.configs.blotato) {
-        preOrg.configs.blotato = blotato;
-    }
+
+    Object.values(credentialProviders).forEach(provider => {
+        if (!preOrg.configs[provider.name]) {
+            preOrg.configs[provider.name] = {
+                apiKey: ''
+            };
+        }
+    });
+
     if (!preOrg.configs.accounts) {
         preOrg.configs.accounts = [
             // {
@@ -204,6 +235,7 @@ export default function Settings({ params, pathname, searchParams, session, user
                         },
                     }
                 });
+                // console.log('thisOrg: ', thisOrg);
 
                 if (thisOrg && thisOrg.success && thisOrg.data) {
                     _setOrg(thisOrg.data);
@@ -358,88 +390,48 @@ export default function Settings({ params, pathname, searchParams, session, user
                 </TabsContent>
                 <TabsContent value="credentials">
                     <div className="flex flex-col gap-6">
-                        {/* Blotato */}
-                        <div className="card-1 flex flex-col gap-3">
-                            <div className="flex gap-3 items-center">
-                                <Image
-                                    src={'/images/other/blotato-logo.webp'}
-                                    alt={'Blotato Logo'}
-                                    width={40}
-                                    height={40}
-                                />
-                                <span className="text-xl">Blotato</span>
-                            </div>
-                            <FormBuilder
-                                formData={_org.configs.blotato || {}}
-                                isLoading={isActionLoading}
-                                fields={[
-                                    {
-                                        name: 'apiKey',
-                                        label: 'Blotato API key',
-                                        placeholder: `Enter your blotato webhook URL`,
-                                        required: true,
-                                        hidden: false,
-                                        disabled: false,
-                                        validator: 'length'
-                                    }
-                                ]}
-                                onSubmit={(data) => {
-                                    handleOrgUpdate({
-                                        ..._org,
-                                        configs: {
-                                            ..._org.configs,
-                                            blotato: data
-                                        }
-                                    });
-                                }}
-                            />
-                        </div>
+                        {
+                            Object.keys(credentialProviders).map((key) => {
+                                const provider = credentialProviders[key];
 
-                        {/* ElevenLabs */}
-                        <div className="card-1 flex flex-col gap-3">
-                            <div className="flex gap-3 items-center">
-                                <Image
-                                    src={'/images/other/elevenlabs-logo.png'}
-                                    alt={'ElevenLabs Logo'}
-                                    width={40}
-                                    height={40}
-                                />
-                                <span className="text-xl">ElevenLabs</span>
-                            </div>
-                            <FormBuilder
-                                formData={_org.configs.elevenLabs || {}}
-                                isLoading={isActionLoading}
-                                fields={[
-                                    {
-                                        name: 'apiKey',
-                                        label: 'ElevenLabs API key',
-                                        placeholder: `Enter your elevenLabs API key`,
-                                        required: true,
-                                        hidden: false,
-                                        disabled: false,
-                                        validator: 'length'
-                                    },
-                                    {
-                                        name: 'defaultVoiceId',
-                                        label: 'ElevenLabs Default Voice ID',
-                                        placeholder: `Enter your elevenLabs Default Voice ID`,
-                                        required: true,
-                                        hidden: false,
-                                        disabled: false,
-                                        validator: 'length'
-                                    }
-                                ]}
-                                onSubmit={(data) => {
-                                    handleOrgUpdate({
-                                        ..._org,
-                                        configs: {
-                                            ..._org.configs,
-                                            elevenLabs: data
-                                        }
+                                const editFields = [];
+                                Object.keys(provider.default).forEach(configKey => {
+                                    editFields.push({
+                                        name: configKey,
+                                        label: provider.default[configKey].label,
+                                        placeholder: ` Enter your ${toDisplayStr(configKey)}`,
+                                        defaultValue: _org.configs[provider.name]
+                                            ? _org.configs[provider.name][configKey] || ''
+                                            : '',
+                                        validatorKey: 'length',
                                     });
-                                }}
-                            />
-                        </div>
+                                });
+
+                                return (
+                                    <div className="card-1 flex flex-col gap-3" key={provider.name}>
+                                        <div className="flex gap-3 items-center">
+                                            <Image
+                                                src={provider.logo}
+                                                alt={`${provider.name} Logo`}
+                                                width={35}
+                                                height={35}
+                                            />
+                                            <span className="text-xl">{provider.label}</span>
+                                        </div>
+                                        <FormBuilder
+                                            formData={_org.configs[provider.name] || {}}
+                                            isLoading={isActionLoading}
+                                            fields={editFields}
+                                            onSubmit={(data) => {
+                                                let newOrg = { ..._org };
+                                                newOrg.configs = newOrg.configs || {};
+                                                newOrg.configs[provider.name] = data;
+                                                handleOrgUpdate(newOrg);
+                                            }}
+                                        />
+                                    </div>
+                                );
+                            })}
                     </div>
                 </TabsContent>
                 <TabsContent value="accounts">

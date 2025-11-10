@@ -10,6 +10,8 @@ import DateDisplay from "@/components/date/DateDisplay";
 import { languageOptions, socialMediaPlatforms, weekdayOptions } from "@/data/types";
 import StatusItem from "@/components/other/statusItem";
 import { Dropdown } from "@/components/other/dropdown";
+import _, { get, map } from "lodash";
+import AgendaBuilder from "@/components/agenda/agendaBuilder";
 
 
 
@@ -50,11 +52,29 @@ export default function Campaigns({ pathname, user, account, session, org }) {
             data: null,
         }
         try {
-            item.org_id = org ? org.id : null;
+            let toSaveData = { ...item };
+            toSaveData.org_id = org ? org.id : null;
 
+            if (toSaveData.org_id === undefined) {
+                notify({ type: 'error', message: 'Organization ID is required' });
+                resObj.success = false;
+                resObj.message = 'Organization ID is required';
+                return resObj;
+            }
+
+            // if avatar_id is not set, remove it from the data to avoid foreign key constraint error
+            if (!toSaveData.avatar_id) {
+                delete toSaveData.avatar_id;
+            }
+            if (!toSaveData.sources || toSaveData.sources.length === 0) {
+                delete toSaveData.sources;
+            }
+
+
+            // console.log('Adding new campaign: ', toSaveData);
             const response = await saCreateItem({
                 collection: collectionName,
-                data: item
+                data: toSaveData
             });
 
             console.log(`Response from adding new ${collectionName}: `, response);
@@ -87,12 +107,29 @@ export default function Campaigns({ pathname, user, account, session, org }) {
         }
         // console.log('handleUpdateItem : ', item);
         // return resObj;
+
+
         try {
+            let toSaveData = { ...item };
+            // if avatar_id is not set, remove it from the data to avoid foreign key constraint error
+            if (!toSaveData.avatar_id) {
+                delete toSaveData.avatar_id;
+            }
+            if (!toSaveData.sources || toSaveData.sources.length === 0) {
+                delete toSaveData.sources;
+            }
+            // delete relational data that should not be directly updated
+            ['avatar'].forEach(relKey => {
+                if (toSaveData[relKey]) {
+                    delete toSaveData[relKey];
+                }
+            });
+
             const response = await saUpdateItem({
                 collection: collectionName,
                 query: {
                     where: { id: item.id },
-                    data: item
+                    data: toSaveData
                 }
             });
 
@@ -100,7 +137,7 @@ export default function Campaigns({ pathname, user, account, session, org }) {
 
             if (response && response.success) {
                 _setData(prev => prev.map(i => i.id === item.id ? response.data : i));
-                notify({ type: 'success', message: 'Campaign updated successfully' });
+                // notify({ type: 'success', message: 'Campaign updated successfully' });
                 resObj.success = true;
                 resObj.data = response.data;
                 resObj.message = 'Done';
@@ -201,6 +238,10 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                         },
                         orderBy: {
                             created_at: 'desc'
+                        },
+                        include: {
+                            sources: true,
+                            avatar: true
                         }
                     }
                 });
@@ -241,6 +282,9 @@ export default function Campaigns({ pathname, user, account, session, org }) {
         label: template.name
     }));
 
+    // console.log('_data: ', _data);
+
+
     return (
         <div className="container-main w-full flex flex-col gap-6">
             <h1 className="text-2xl flex items-center gap-2">
@@ -254,16 +298,18 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                     editable={true}
                     editableInline={true}
                     allowAddNew={true}
+                    modalType="expandable"
                     actions={['edit', 'delete']}
-                    tableExcludeKeys={['org_id']}
-                    previewKey="global_inspiration"
+                    tableExcludeKeys={['org_id', 'sources', 'agenda']}
                     editRenderOrder={[
                         ['name'],
                         ['language', 'status'],
-                        ['avatar_id', 'source_id'],
+                        ['avatar_id'],
+                        ['sources'],
                         ['scheduled_at'],
                         ['global_inspiration'],
                         ['agendaHeading'],
+                        ['agenda'],
                         ['weekday', 'time'],
                         ['target_platforms'],
                         ['spacerHeading'],
@@ -291,7 +337,7 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                             },
                             EditComponent: (props) => {
                                 return (
-                                    <Dropdown fixed={true} className="">
+                                    <Dropdown className="" align="left">
                                         <div data-type="trigger" className="w-32 ">
                                             <StatusItem status={props.value} />
                                         </div>
@@ -328,7 +374,7 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                             type: 'select',
                             required: true,
                             options: languageOptions,
-                            defaultValue: 'en',
+                            defaultValue: org.language || org.configs?.language || 'en',
                             placeholder: 'Select language'
                         },
                         {
@@ -336,20 +382,41 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                             title: 'Avatar',
                             width: 'w-32',
                             type: 'select',
-                            required: true,
+                            required: false,
                             options: avatarOptions,
                             placeholder: 'Select avatar',
                             clearable: true
                         },
                         {
-                            key: 'source_id',
-                            title: 'Source',
+                            key: 'sources',
+                            title: 'Sources',
                             width: 'w-32',
                             type: 'select',
-                            required: true,
+                            required: false,
+                            multiple: true,
                             options: sourceOptions,
-                            placeholder: 'Select source',
-                            clearable: true
+                            placeholder: 'Select sources',
+                            clearable: true,
+                            getValue: (item) => {
+                                let r = item.sources
+                                    ? map(item.sources, 'id')
+                                    : [];
+                                const v = _.get(item, 'sources.connect', null);
+                                if (v) {
+                                    r = map(v, 'id');
+                                }
+                                // console.log('getValue item: ', item);
+                                // console.log('getValue r: ', r);
+                                return r;
+                            },
+                            setValue: (item, value) => {
+                                let newItem = { ...item };
+                                newItem.sources = {
+                                    connect: value.map(id => ({ id }))
+                                }
+                                // console.log('setValue newItem: ', newItem);
+                                return newItem;
+                            }
                         },
                         {
                             key: 'global_inspiration',
@@ -373,31 +440,26 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                             }
                         },
                         {
-                            key: 'weekday',
-                            title: 'Weekday',
+                            key: 'agenda',
+                            title: '',
                             width: 'w-32',
-                            type: 'select',
-                            options: weekdayOptions,
-                            required: true,
-                            placeholder: 'Select day'
-                        },
-                        {
-                            key: 'time',
-                            title: 'Time',
-                            width: 'w-24',
-                            type: 'select',
-                            required: true,
-                            options: weekTimeOptions,
-                        },
-                        {
-                            key: 'target_platforms',
-                            title: 'Platforms',
-                            width: 'w-40',
-                            type: 'select',
-                            options: platformOptions,
-                            multiple: true,
-                            required: true,
-                            placeholder: 'Select platforms'
+                            type: 'text',
+                            required: false,
+                            EditComponent: (props) => {
+                                return <AgendaBuilder
+                                    items={props.value || []}
+                                    onChange={(newAgenda) => {
+                                        if (props.onChange) {
+                                            props.onChange({
+                                                target: {
+                                                    name: 'agenda',
+                                                    value: newAgenda
+                                                }
+                                            });
+                                        }
+                                    }}
+                                />
+                            }
                         },
                         {
                             key: 'spacerHeading',
@@ -418,9 +480,12 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                         // console.log('Campaigns data changed: ', newData);
                     }}
                 />
+                <div className="h-20"></div>
 
                 <Loading loading={isLoading} />
+
             </div>
+
         </div>
     );
 }

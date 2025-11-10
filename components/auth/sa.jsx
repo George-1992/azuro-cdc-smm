@@ -192,9 +192,12 @@ const handleSignin = async (formData) => {
         // console.log('formData.password ==> ', formData.password);
         // console.log('user.password ==> ', user.password);
 
+        // const testBcryptPass = bcrypt.hashSync('a123456789', 10);
+        // console.log('testBcryptPass ==> ', testBcryptPass);
+
         // if user found, check password
         const passwordMatch = bcrypt.compareSync(formData.password, user.password);
-        // console.log('passwordMatch ==> ', passwordMatch);
+        console.log('passwordMatch ==> ', passwordMatch);
 
         // const cookiesStore = cookies();
         // cookiesStore.set('test-cookie', 'test-value', { httpOnly: true, path: '/' });

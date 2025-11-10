@@ -105,7 +105,7 @@ export const pagesMapSidebar = [
         subItems: []
     },
     {
-        name: 'Publications',
+        name: 'Content',
         icon: (props) => <Newspaper {...props} />,
         href: '/publications',
         expanded: true,

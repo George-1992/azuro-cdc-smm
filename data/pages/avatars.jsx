@@ -7,6 +7,8 @@ import { useState, useEffect } from "react";
 import allTypes, { avatarTones } from "@/data/types";
 import StatusItem from "@/components/other/statusItem";
 import SourceTypeItem, { getTypeFromUrl } from "@/components/other/sourceTypeItem";
+import { MediaUploader } from "@/components/mediaLibrary";
+import UppyEl from "@/components/mediaLibrary/uppy/uppy";
 
 export default function Avatars({ pathname, user, account, session, org }) {
 
@@ -252,6 +254,14 @@ export default function Avatars({ pathname, user, account, session, org }) {
                 />
 
                 <Loading loading={isLoading} />
+            </div>
+
+            <div>
+                {/* <MediaUploader
+
+                /> */}
+
+                <UppyEl />
             </div>
         </div>
     );

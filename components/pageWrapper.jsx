@@ -173,6 +173,8 @@ export default async function PageWrapper({ children, params, searchParams }) {
     const PageComp = isPageMap ? isPageMap.Component : null;
 
 
+    // console.log('isPageMap org==> ', org);
+
     return (
         <html lang="en">
             <head>

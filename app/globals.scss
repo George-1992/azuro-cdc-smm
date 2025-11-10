@@ -205,6 +205,7 @@ body {
   .bg-blur {
     @apply bg-[var(--background)/70%] backdrop-blur-sm;
   }
+
   .bg-main {
     @apply bg-[var(--primary)];
   }
@@ -310,9 +311,18 @@ body {
     }
   }
 
+  .btn-sm {
+    @apply px-1 py-0.5;
+  }
+
+  .btn-xs {
+    @apply px-0.5 py-[0.25rem] text-xs;
+  }
+
+
   .btn-secondary {
     @apply inline-flex items-center justify-center rounded-md font-medium;
-    @apply transition-colors duration-200 px-2 py-1.5 border-0 cursor-pointer no-underline shadow-sm select-none;
+    @apply transition-colors duration-200 border-0 cursor-pointer no-underline shadow-sm select-none;
     @apply touch-manipulation;
     background-color: var(--secondary);
     color: var(--secondary-foreground);
@@ -326,6 +336,9 @@ body {
   .btn-danger {
     @apply bg-red-300;
   }
+
+
+
 
 }
 
