@@ -7,7 +7,8 @@ import { useState, useEffect } from "react";
 import allTypes from "@/data/types";
 import StatusItem from "@/components/other/statusItem";
 import SourceTypeItem, { getTypeFromUrl } from "@/components/other/sourceTypeItem";
- 
+import Uploader from "@/components/mediaLibrary/filepond";
+
 export default function Sources({ pathname, user, account, session, org }) {
 
 
@@ -185,42 +186,44 @@ export default function Sources({ pathname, user, account, session, org }) {
                     editableInline={true}
                     allowAddNew={true}
                     actions={['edit', 'delete']}
-                    tableExcludeKeys={['idea_inspiration', 'text', 'internal_note', 'config']}
+                    tableExcludeKeys={['idea_inspiration', 'raw_text', 'internal_note', 'config', 'medias']}
                     previewKey="notes"
                     editRenderOrder={[
                         ['name'],
-                        ['status', 'type'],
+                        ['type'],
                         ['url'],
-                        ['fixed_idea'],
-                        ['idea_inspiration'],
-                        ['text'],
+                        // ['fixed_idea'],
+                        // ['idea_inspiration'],
+                        ['raw_text'],
                         ['text_output'],
+                        ['medias'],
                     ]}
                     columns={[
                         {
                             key: 'name',
                             title: 'Name',
                             width: 'w-48',
-                            required: true,
+                            required: false,
                             validateKey: 'length',
+                            defaultValue: 'Untitled Source',
                         },
-                        {
-                            key: 'status',
-                            type: 'select',
-                            title: 'Status',
-                            width: 'w-48',
-                            required: true,
-                            disabled: true,
-                            defaultValue: allTypes[collectionName].options[0],
-                            options: allTypes[collectionName].options,
-                            Component: (props) => {
-                                // console.log('props: ', props);
-                                const { value } = props;
-                                return <StatusItem
-                                    status={value}
-                                />
-                            },
-                        },
+                        // {
+                        //     key: 'status',
+                        //     type: 'select',
+                        //     title: 'Status',
+                        //     width: 'w-48',
+                        //     required: true,
+                        //     disabled: true,
+                        //     defaultValue: allTypes[collectionName].options[0],
+                        //     options: allTypes[collectionName].options,
+                        //     Component: (props) => {
+                        //         // console.log('props: ', props);
+                        //         const { value } = props;
+                        //         return <StatusItem
+                        //             status={value}
+                        //         />
+                        //     },
+                        // },
                         {
                             key: 'type',
                             title: 'Type',
@@ -243,27 +246,27 @@ export default function Sources({ pathname, user, account, session, org }) {
                             key: 'url',
                             title: 'URL',
                             width: 'w-48',
-                            required: false,
+                            required: true,
                             validateKey: 'url',
                         },
+                        // {
+                        //     key: 'fixed_idea',
+                        //     type: 'textarea',
+                        //     title: 'Fixed Idea',
+                        //     width: 'w-48',
+                        //     required: false,
+                        //     validateKey: 'length',
+                        // },
+                        // {
+                        //     key: 'idea_inspiration',
+                        //     type: 'textarea',
+                        //     title: 'Idea Inspiration',
+                        //     width: 'w-48',
+                        //     required: false,
+                        //     validateKey: 'length',
+                        // },
                         {
-                            key: 'fixed_idea',
-                            type: 'textarea',
-                            title: 'Fixed Idea',
-                            width: 'w-48',
-                            required: false,
-                            validateKey: 'length',
-                        },
-                        {
-                            key: 'idea_inspiration',
-                            type: 'textarea',
-                            title: 'Idea Inspiration',
-                            width: 'w-48',
-                            required: false,
-                            validateKey: 'length',
-                        },
-                        {
-                            key: 'text',
+                            key: 'raw_text',
                             type: 'textarea',
                             title: 'Text (Raw Input/source)',
                             width: 'w-48',
@@ -271,14 +274,27 @@ export default function Sources({ pathname, user, account, session, org }) {
                             disabled: false,
                             // validateKey: 'length',
                         },
+                        // {
+                        //     key: 'text_output',
+                        //     type: 'textarea',
+                        //     title: 'Text (Output)',
+                        //     width: 'w-48',
+                        //     required: false,
+                        //     disabled: true,
+                        //     // validateKey: 'length',
+                        // },
                         {
-                            key: 'text_output',
-                            type: 'textarea',
-                            title: 'Text (Output)',
-                            width: 'w-48',
+                            key: 'medias',
+                            title: 'Medias',
+                            width: 'w-96',
                             required: false,
-                            disabled: true,
-                            // validateKey: 'length',
+                            Component: ({ value }) => {
+                                return (
+                                    <div className="w-full">
+                                        <Uploader />
+                                    </div>
+                                )
+                            }
                         },
                     ]}
                     data={_data}
@@ -293,7 +309,7 @@ export default function Sources({ pathname, user, account, session, org }) {
                 <Loading loading={isLoading} />
             </div>
 
-          
+
         </div>
     );
 }

@@ -1,4 +1,5 @@
 import { toDisplayStr } from "@/utils/other";
+import Validators from "@/utils/validation";
 import { HexagonIcon, YoutubeIcon } from "lucide-react";
 import Image from "next/image";
 
@@ -66,6 +67,8 @@ export const getTypeFromUrl = (url) => {
             return 'tiktok_creator';
         } else if (url.includes('instagram.com') || url.includes('instagram_creator')) {
             return 'instagram_creator';
+        } else if (Validators.url(url)) {
+            return 'website';
         }
 
     } catch (error) {

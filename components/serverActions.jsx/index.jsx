@@ -131,6 +131,10 @@ export const saUpdateItem = async ({
         resObj.message = 'Item updated successfully';
         resObj.data = data;
 
+        if (resObj.success) {
+            handleN8nWebhook({ action: 'update', collection, data });
+        }
+
         return resObj;
 
     } catch (error) {
@@ -278,6 +282,10 @@ export const saCreateItem = async ({
         resObj.success = true;
         resObj.message = 'Item created successfully';
         resObj.data = createdItem;
+
+        if (resObj.success) {
+            handleN8nWebhook({ action: 'create', collection, data: createdItem });
+        }
 
         return resObj;
 
@@ -434,5 +442,52 @@ export const saCreatePublication = async ({ data, org }) => {
         console.error(error);
         resObj.message = error.message || 'An error occurred';
         resObj.warning = true;
+    }
+}
+
+
+// n8n webhook handlers
+
+export const handleN8nWebhook = async ({ action, collection, data }) => {
+    try {
+        let webhooks = null;
+        let toSendData = data;
+        const settings = await Prisma.organizations.findUnique({
+            where: { id: data.org_id },
+        });
+        console.log('handleN8nWebhook settings: ', settings);
+        if (settings && settings.webhooks) {
+            webhooks = settings.webhooks;
+        }
+        console.log('handleN8nWebhook webhooks: ', webhooks);
+        if (!webhooks) {
+            console.error('No webhooks configured');
+            return;
+        }
+
+        toSendData.config = toSendData.config || {};
+        toSendData.config.requestDomain = process.env.DOMAIN | null;
+
+        if (collection === 'sources') {
+            console.log('handleN8nWebhook data: ', toSendData);
+            if (webhooks.sources) {
+                // toSendData.config.webhook = webhooks.sources;
+                //make POST request to each webhook url
+                const url = webhooks.sources;
+                // console.log('url: ', url);
+
+                const result = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(toSendData)
+                });
+                // console.log('result: ', result);
+            }
+        }
+
+    } catch (error) {
+        console.error(error);
     }
 }

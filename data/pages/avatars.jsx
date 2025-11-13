@@ -8,7 +8,7 @@ import allTypes, { avatarTones } from "@/data/types";
 import StatusItem from "@/components/other/statusItem";
 import SourceTypeItem, { getTypeFromUrl } from "@/components/other/sourceTypeItem";
 import { MediaUploader } from "@/components/mediaLibrary";
-import UppyEl from "@/components/mediaLibrary/uppy/uppy";
+import Uploader from "@/components/mediaLibrary/filepond";
 
 export default function Avatars({ pathname, user, account, session, org }) {
 
@@ -209,6 +209,7 @@ export default function Avatars({ pathname, user, account, session, org }) {
                         ['tone'],
                         ['notes'],
                         ['elvenlabs_voice_id'],
+                        ['medias'],
                     ]}
                     columns={[
                         {
@@ -242,6 +243,19 @@ export default function Avatars({ pathname, user, account, session, org }) {
                             required: false,
                             validateKey: 'length',
                         },
+                        {
+                            key: 'medias',
+                            title: 'Medias',
+                            width: 'w-96',
+                            required: false,
+                            Component: ({ value }) => {
+                                return (
+                                    <div className="w-full">
+                                        <Uploader />
+                                    </div>
+                                )
+                            }
+                        },
 
                     ]}
                     data={_data}
@@ -256,13 +270,6 @@ export default function Avatars({ pathname, user, account, session, org }) {
                 <Loading loading={isLoading} />
             </div>
 
-            <div>
-                {/* <MediaUploader
-
-                /> */}
-
-                <UppyEl />
-            </div>
         </div>
     );
 }

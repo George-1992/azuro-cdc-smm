@@ -2,7 +2,7 @@
 import Select from "@/components/select";
 import { socialMediaPlatforms, weekdayOptions } from "@/data/types";
 import _, { set } from "lodash";
-import { PlusIcon, MinusIcon } from "lucide-react";
+import { PlusIcon, MinusIcon, X, CircleXIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function AgendaBuilder({
@@ -11,15 +11,8 @@ export default function AgendaBuilder({
 
     const itemsExample = [
         {
-            weekSchedule: {
-                monday: [{ h: 9, m: 0 }],
-                tuesday: [{ h: 9, m: 0 }],
-                wednesday: [{ h: 9, m: 0 }],
-                thursday: [{ h: 9, m: 0 }],
-                friday: [{ h: 9, m: 0 }],
-                saturday: [{ h: 9, m: 0 }],
-                sunday: [{ h: 9, m: 0 }],
-            },
+            weekday: 'monday',
+            times: [{ h: 9, m: 0 }],
             targetPlatforms: ['facebook', 'instagram'],
         }
     ]
@@ -40,63 +33,59 @@ export default function AgendaBuilder({
         _setItems(data);
     }
 
-    const handleAddTimeSlot = (itemIndex, day) => {
+    const handleAddTimeSlot = (itemIndex) => {
         let newData = [..._items];
-        if (newData[itemIndex] && newData[itemIndex].weekSchedule && newData[itemIndex].weekSchedule[day]) {
-            const currentDaySchedule = [...newData[itemIndex].weekSchedule[day]];
+        if (newData[itemIndex] && newData[itemIndex].times) {
+            const currentTimes = [...newData[itemIndex].times];
             // Add a new time slot (default to 9:00 AM)
-            currentDaySchedule.push({ h: 9, m: 0 });
-            newData[itemIndex].weekSchedule[day] = currentDaySchedule;
-
+            currentTimes.push({ h: 9, m: 0 });
+            newData[itemIndex].times = currentTimes;
         }
         handleNoneInputChange(newData);
     }
 
-    const handleRemoveTimeSlot = (itemIndex, day, timeIndex) => {
-
+    const handleRemoveTimeSlot = (itemIndex, timeIndex) => {
         let newData = [..._items];
-        if (newData[itemIndex] && newData[itemIndex].weekSchedule && newData[itemIndex].weekSchedule[day]) {
-            const currentDaySchedule = [...newData[itemIndex].weekSchedule[day]];
+        if (newData[itemIndex] && newData[itemIndex].times) {
+            const currentTimes = [...newData[itemIndex].times];
             // Remove the time slot at the specified index (but keep at least one)
-            if (currentDaySchedule.length > 1) {
-                currentDaySchedule.splice(timeIndex, 1);
+            if (currentTimes.length > 1) {
+                currentTimes.splice(timeIndex, 1);
             }
-            newData[itemIndex].weekSchedule[day] = currentDaySchedule;
+            newData[itemIndex].times = currentTimes;
         }
-
         handleNoneInputChange(newData);
     }
 
-    const handleTimeChange = (itemIndex, day, timeIndex, field, value) => {
+    const handleTimeChange = (itemIndex, timeIndex, field, value) => {
         let newData = [..._items];
-        if (newData[itemIndex] && newData[itemIndex].weekSchedule && newData[itemIndex].weekSchedule[day]) {
-            const currentDaySchedule = [...newData[itemIndex].weekSchedule[day]];
-            currentDaySchedule[timeIndex] = {
-                ...currentDaySchedule[timeIndex],
+        if (newData[itemIndex] && newData[itemIndex].times) {
+            const currentTimes = [...newData[itemIndex].times];
+            currentTimes[timeIndex] = {
+                ...currentTimes[timeIndex],
                 [field]: parseInt(value)
             };
-            newData[itemIndex].weekSchedule[day] = currentDaySchedule;
+            newData[itemIndex].times = currentTimes;
         }
-
         handleNoneInputChange(newData);
     }
 
     const handleAddSchedule = () => {
         const newSchedule = {
-            weekSchedule: {
-                monday: [{ h: 9, m: 0 }],
-                tuesday: [{ h: 9, m: 0 }],
-                wednesday: [{ h: 9, m: 0 }],
-                thursday: [{ h: 9, m: 0 }],
-                friday: [{ h: 9, m: 0 }],
-                saturday: [{ h: 10, m: 0 }],
-                sunday: [{ h: 10, m: 0 }],
-            },
+            weekday: 'monday',
+            times: [{ h: 9, m: 0 }],
             targetPlatforms: [],
         };
         let newData = [..._items, newSchedule];
         handleNoneInputChange(newData);
     }
+
+    const handleRemoveSchedule = (index) => {
+        let newData = [..._items];
+        newData.splice(index, 1);
+        handleNoneInputChange(newData);
+    }
+
     // console.log('_items: ', _items);
 
 
@@ -105,94 +94,87 @@ export default function AgendaBuilder({
             <div className="flex flex-col gap-2">
                 {
                     _items.map((item, index) => (
-                        <div key={index} className="agenda-item p-3 rounded-md border bg-slate-50 border-gray-300 shadow-sm">
-                            <div className="font-semibold mb-2">Schedule {index + 1}</div>
+                        <div key={index} className="agenda-item relative p-3 rounded-md border bg-slate-50 border-gray-300 shadow-sm">
+                            <div className="font-semibold mb-4">Schedule {index + 1}</div>
 
-                            <div className="grid grid-cols-7 gap-2">
-                                {
-                                    weekdayOptions.map((dayObj, dayIndex) => {
-                                        const day = dayObj.value;
-                                        const timeSlots = item.weekSchedule[day];
-                                        return (
-                                            <div key={dayIndex} className="flex flex-col gap-2 p-0.5 border border-gray-300 rounded-md">
-                                                <div className="text-start">
-                                                    <span className="font-semibold text-sm">{dayObj.label}</span>
-                                                </div>
+                            {/* Weekday Selection */}
+                            <div className="mb-4 flex items-center gap-6 ">
+                                <div className="w-40">
+                                    <span className="block text-sm font-medium text-gray-700 mb-2">
+                                        Weekday
+                                    </span>
+                                    <Select
+                                        className="bg-white max-w-xs"
+                                        placeholder="Select weekday"
+                                        options={weekdayOptions}
+                                        value={item.weekday}
+                                        onChange={(selected) => {
+                                            const v = selected?.target?.value || selected?.value || selected;
+                                            handleItemChange(index, "weekday", v);
+                                        }}
+                                    />
+                                </div>
 
-                                                {/* Time slots for this day */}
-                                                <div className="flex flex-1 flex-col gap-1">
-                                                    {timeSlots.map((timeSlot, timeIndex) => (
-                                                        <div key={timeIndex} className="flex flex-col gap-1 ">
-                                                            <div className="flex items-center gap-0.5 text-xs">
-                                                                <select
-                                                                    value={timeSlot.h}
-                                                                    onChange={(e) => handleTimeChange(index, day, timeIndex, 'h', e.target.value)}
-                                                                    className="w-12 border border-gray-300 rounded px-1 py-0.5 text-xs"
-                                                                >
-                                                                    {Array.from({ length: 24 }, (_, i) => (
-                                                                        <option key={i} value={i}>
-                                                                            {i.toString().padStart(2, '0')}
-                                                                        </option>
-                                                                    ))}
-                                                                </select>
-                                                                <span>:</span>
-                                                                <select
-                                                                    value={timeSlot.m}
-                                                                    onChange={(e) => handleTimeChange(index, day, timeIndex, 'm', e.target.value)}
-                                                                    className="border border-gray-300 rounded px-1 py-0.5 text-xs w-12"
-                                                                >
-                                                                    {Array.from({ length: 12 }, (_, i) => (
-                                                                        <option key={i} value={i * 5}>
-                                                                            {(i * 5).toString().padStart(2, '0')}
-                                                                        </option>
-                                                                    ))}
-                                                                </select>
+                                <div>
+                                    <span className="block text-sm font-medium text-gray-700 mb-2">
+                                        Time
+                                    </span>
+                                    <div className="timeslot flex items-center gap-0.5">
+                                        <select
+                                            className="p-1.5 border border-gray-300 rounded-md bg-white"
+                                            value={item.times[0]?.h || 0}
+                                            onChange={(e) => handleTimeChange(index, 0, 'h', e.target.value)}
+                                        >
+                                            {
+                                                Array.from({ length: 24 }, (_, i) => (
+                                                    <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
+                                                ))
+                                            }
+                                        </select>
+                                        :
+                                        <select
+                                            className="p-1.5 border border-gray-300 rounded-md bg-white"
+                                            value={item.times[0]?.m || 0}
+                                            onChange={(e) => handleTimeChange(index, 0, 'm', e.target.value)}
+                                        >
+                                            {
+                                                Array.from({ length: 60 }, (_, i) => (
+                                                    <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
+                                                ))
+                                            }
+                                        </select>
+                                    </div>
 
-                                                                {/* Remove button (only show if more than 1 time slot) */}
-                                                                {timeSlots.length > 1 && (
-                                                                    <button
-                                                                        onClick={() => handleRemoveTimeSlot(index, day, timeIndex)}
-                                                                        className="p-0.5 hover:bg-red-100 rounded text-red-500 transition-colors"
-                                                                        title="Remove time slot"
-                                                                        type="button"
-                                                                    >
-                                                                        <MinusIcon className="w-3 h-3" />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-
-
-                                                </div>
-                                                {/* Add time slot button */}
-                                                <button
-                                                    className="w-full p-1 border border-dashed border-gray-300 rounded hover:bg-gray-50 flex items-center justify-center transition-colors"
-                                                    onClick={() => handleAddTimeSlot(index, day)}
-                                                    title="Add time slot"
-                                                    type="button"
-                                                >
-                                                    <PlusIcon className="w-3 h-3 text-gray-400" />
-                                                </button>
-                                            </div>
-                                        )
-                                    })
-                                }
+                                </div>
+                                <div className="absolute -top-3 -right-2">
+                                    <button
+                                        className="text-red-500 hover:scale-105 text-sm mt-2 duration-200"
+                                        onClick={() => handleRemoveSchedule(index)}
+                                        type="button"
+                                    >
+                                        <CircleXIcon className="size-6" />
+                                    </button>
+                                </div>
+                                <div className="w-full">
+                                    <div className="text-sm mt-4">Target Platforms</div>
+                                    <div className="flex flex-wrap gap-2">
+                                        <Select
+                                            className="bg-white"
+                                            placeholder="select platforms"
+                                            options={socialMediaPlatforms}
+                                            value={item.targetPlatforms}
+                                            multiple={true}
+                                            onChange={(selected) => {
+                                                const v = selected?.target?.value || [];
+                                                handleItemChange(index, "targetPlatforms", v);
+                                            }}
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="text-sm mt-4">Target Platforms</div>
-                            <div className="flex flex-wrap gap-2">
-                                <Select
-                                    className="bg-white"
-                                    placeholder="select platforms"
-                                    options={socialMediaPlatforms}
-                                    value={item.targetPlatforms}
-                                    multiple={true}
-                                    onChange={(selected) => {
-                                        const v = selected?.target?.value || [];
-                                        handleItemChange(index, "targetPlatforms", v);
-                                    }}
-                                />
-                            </div>
+
+
+
                         </div>
                     ))
                 }

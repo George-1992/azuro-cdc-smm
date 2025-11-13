@@ -61,8 +61,8 @@ export default function Publications({ pathname, user, account, session, org }) 
 
     // Define options for the dropdowns
     const statusOptions = [
-        { value: 'planned', label: 'Planned' },
         { value: 'draft', label: 'Draft' },
+        { value: 'ready', label: 'Ready' },
         { value: 'scheduled', label: 'Scheduled' },
         { value: 'published', label: 'Published' },
         { value: 'cancelled', label: 'Cancelled' }
@@ -215,7 +215,7 @@ export default function Publications({ pathname, user, account, session, org }) 
     }, [org]);
 
 
-    
+
     return (
         <div className="container-main w-full flex flex-col gap-6">
             <h1 className="text-2xl flex items-center gap-2">
@@ -226,7 +226,7 @@ export default function Publications({ pathname, user, account, session, org }) 
             <div className="w-full relative rounded-md overflow-x-auto">
                 <Table
                     className="card-1 min-w-full"
-                    editable={false}
+                    editable={true}
                     editableInline={true}
                     allowAddNew={true}
                     actions={['edit', 'delete', 'preview']}

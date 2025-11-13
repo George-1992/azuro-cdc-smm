@@ -93,6 +93,7 @@ model organizations {
   avatars      avatars[]
   campaigns    campaigns[]
   publications publications[]
+  medias       medias[]
 
   @@index([name])
   @@index([account_id])
@@ -120,15 +121,14 @@ model sources {
   name             String
   status           String   @default("processing")
   type             String
-  fixed_idea       String?
-  idea_inspiration String?
   url              String?
-  text             String?
+  raw_text         String?
   text_output      String?
   internal_note    String?
   config           Json?    @default("{}")
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
+  medias           Json?    @default("[]")
 
   org_id       String
   org          organizations  @relation(fields: [org_id], references: [id], onDelete: Cascade)
@@ -142,14 +142,16 @@ model sources {
 }
 
 model avatars {
-  id                 String   @id @default(cuid())
+  id                 String  @id @default(cuid())
   name               String
   tone               String
   notes              String?
-  configs            Json?    @default("{}")
+  configs            Json?   @default("{}")
   elvenlabs_voice_id String?
-  created_at         DateTime @default(now())
-  updated_at         DateTime @updatedAt
+  medias             Json?   @default("[]")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   org_id String
   org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
@@ -224,4 +226,19 @@ model publications {
   @@index([name])
   @@index([status])
   @@index([scheduled_at])
+}
+
+model medias {
+  id         String   @id @default(cuid())
+  url        String
+  type       String
+  metadata   Json?    @default("{}")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  org_id String
+  org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+  @@index([org_id])
+  @@index([type])
 }
