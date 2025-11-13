@@ -117,18 +117,20 @@ model users_in_organizations {
 }
 
 model sources {
-  id               String   @id @default(cuid())
-  name             String
-  status           String   @default("processing")
-  type             String
-  url              String?
-  raw_text         String?
-  text_output      String?
-  internal_note    String?
-  config           Json?    @default("{}")
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-  medias           Json?    @default("[]")
+  id                 String   @id @default(cuid())
+  name               String
+  status             String   @default("processing")
+  type               String
+  url                String?
+  raw_text           String?
+  text_output        String?
+  json_chapters      Json?    @default("{}")
+  text_stamps_output String?
+  internal_note      String?
+  config             Json?    @default("{}")
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  medias             Json?    @default("[]")
 
   org_id       String
   org          organizations  @relation(fields: [org_id], references: [id], onDelete: Cascade)

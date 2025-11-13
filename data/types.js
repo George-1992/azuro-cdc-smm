@@ -2,10 +2,26 @@ const allTypes = {
     sources: {
         options: [
             // 'pending',
-            'processing', 'processed', 'failed'
+            'draft',
+            'ready', 'scheduled',
+            'cancelled', 'published',
+            // 'processing', 'processed', 'failed'
         ],
     }
 }
+
+export const sourceTypes = [
+    'youtube_creator',
+    'youtube_content',
+    'tiktok_creator',
+    'tiktok_content',
+    'instagram_content',
+    'instagram_creator',
+    'web_page',
+    'web_search',
+    'pdf',
+    'pdf',
+]
 
 export const webhookTypes = [
     'sources',

@@ -4,7 +4,7 @@ import { saCreateItem, saDeleteItem, saGetItems, saUpdateItem } from "@/componen
 import { notify } from "@/components/sonnar/sonnar";
 import Table from "@/components/table";
 import { useState, useEffect } from "react";
-import allTypes from "@/data/types";
+import allTypes, { sourceTypes } from "@/data/types";
 import StatusItem from "@/components/other/statusItem";
 import SourceTypeItem, { getTypeFromUrl } from "@/components/other/sourceTypeItem";
 import Uploader from "@/components/mediaLibrary/filepond";
@@ -228,19 +228,21 @@ export default function Sources({ pathname, user, account, session, org }) {
                             key: 'type',
                             title: 'Type',
                             width: 'w-48',
+                            type: 'select',
                             required: true,
-                            disabled: true,
+                            disabled: false,
                             defaultValue: 'n/a',
-                            func: (data) => {
-                                return getTypeFromUrl(data.url);
-                            },
-                            Component: (props) => {
-                                // console.log('type props: ', props);
-                                return <SourceTypeItem
-                                    type={props.value}
-                                    data={props.row}
-                                />
-                            },
+                            options: sourceTypes,
+                            // func: (data) => {
+                            //     return getTypeFromUrl(data.url);
+                            // },
+                            // Component: (props) => {
+                            //     // console.log('type props: ', props);
+                            //     return <SourceTypeItem
+                            //         type={props.value}
+                            //         data={props.row}
+                            //     />
+                            // },
                         },
                         {
                             key: 'url',
