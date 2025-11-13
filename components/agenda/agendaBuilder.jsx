@@ -146,17 +146,10 @@ export default function AgendaBuilder({
                                     </div>
 
                                 </div>
-                                <div className="absolute -top-3 -right-2">
-                                    <button
-                                        className="text-red-500 hover:scale-105 text-sm mt-2 duration-200"
-                                        onClick={() => handleRemoveSchedule(index)}
-                                        type="button"
-                                    >
-                                        <CircleXIcon className="size-6" />
-                                    </button>
-                                </div>
                                 <div className="w-full">
-                                    <div className="text-sm mt-4">Target Platforms</div>
+                                    <span className="block text-sm font-medium text-gray-700 mb-2">
+                                        Target Platforms
+                                    </span>
                                     <div className="flex flex-wrap gap-2">
                                         <Select
                                             className="bg-white"
@@ -171,6 +164,18 @@ export default function AgendaBuilder({
                                         />
                                     </div>
                                 </div>
+
+                                <div className="absolute -top-3 -right-2">
+                                    <button
+                                        className="text-red-500 hover:scale-105 text-sm mt-2 duration-200"
+                                        onClick={() => handleRemoveSchedule(index)}
+                                        type="button"
+                                    >
+                                        <CircleXIcon className="size-6" />
+                                    </button>
+                                </div>
+
+
                             </div>
 
 

@@ -220,7 +220,7 @@ export default function Publications({ pathname, user, account, session, org }) 
         <div className="container-main w-full flex flex-col gap-6">
             <h1 className="text-2xl flex items-center gap-2">
                 <BookOpen className="w-8 h-8 text-purple-500" />
-                {toDisplayStr(collectionName)}
+                Content
             </h1>
 
             <div className="w-full relative rounded-md overflow-x-auto">
