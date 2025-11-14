@@ -1,4 +1,5 @@
 'use server';
+
 import bcrypt from 'bcrypt';
 import Prisma from '@/services/prisma';
 import sendEmail from '@/services/emailing';
@@ -446,8 +447,10 @@ export const saCreatePublication = async ({ data, org }) => {
 }
 
 
-// n8n webhook handlers
+console.log('rocess.env >>>>>>>>>>>: ', process.env.DOMAIN);
 
+
+// n8n webhook handlers
 export const handleN8nWebhook = async ({ action, collection, data }) => {
     try {
         let webhooks = null;
@@ -455,18 +458,18 @@ export const handleN8nWebhook = async ({ action, collection, data }) => {
         const settings = await Prisma.organizations.findUnique({
             where: { id: data.org_id },
         });
-        console.log('handleN8nWebhook settings: ', settings);
         if (settings && settings.webhooks) {
             webhooks = settings.webhooks;
         }
-        console.log('handleN8nWebhook webhooks: ', webhooks);
         if (!webhooks) {
             console.error('No webhooks configured');
             return;
         }
 
+
         toSendData.config = toSendData.config || {};
-        toSendData.config.requestDomain = process.env.DOMAIN | null;
+        toSendData.config.requestDomain = process.env.DOMAIN || null;
+        console.log('toSendData.config: ', toSendData.config);
 
         if (collection === 'sources') {
             console.log('handleN8nWebhook data: ', toSendData);

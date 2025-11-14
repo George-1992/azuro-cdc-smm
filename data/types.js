@@ -20,7 +20,6 @@ export const sourceTypes = [
     'web_page',
     'web_search',
     'pdf',
-    'pdf',
 ]
 
 export const webhookTypes = [
