@@ -45,7 +45,7 @@ export const handleApiRequest = async (req, res) => {
             if (isFile) {
                 // handle file upload
                 console.log('isFile: ', isFile);
-
+                return await handleFileUploadRequest(req, res);
             }
         }
 
