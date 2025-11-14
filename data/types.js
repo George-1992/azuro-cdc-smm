@@ -11,15 +11,16 @@ const allTypes = {
 }
 
 export const sourceTypes = [
-    'youtube_creator',
-    'youtube_content',
-    'tiktok_creator',
-    'tiktok_content',
-    'instagram_content',
-    'instagram_creator',
     'web_page',
     'web_search',
     'pdf',
+    'raw_text',
+    'youtube_content',
+    'youtube_creator',
+    'tiktok_content',
+    'tiktok_creator',
+    'instagram_content',
+    'instagram_creator'
 ]
 
 export const webhookTypes = [
