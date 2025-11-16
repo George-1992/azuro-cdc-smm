@@ -12,6 +12,7 @@ import StatusItem from "@/components/other/statusItem";
 import { Dropdown } from "@/components/other/dropdown";
 import _, { get, map } from "lodash";
 import AgendaBuilder from "@/components/agenda/agendaBuilder";
+import { adjustRelationalData } from "@/utils/data";
 
 
 
@@ -28,6 +29,7 @@ const platformOptions = socialMediaPlatforms.map(platform => ({
 export default function Campaigns({ pathname, user, account, session, org }) {
 
     const collectionName = 'campaigns';
+    const cdn = toDisplayStr(collectionName).slice(0, -1);
     const [isLoading, setIsLoading] = useState(true);
     const [_data, _setData] = useState([]);
     const [_avatars, _setAvatars] = useState([]);
@@ -44,6 +46,43 @@ export default function Campaigns({ pathname, user, account, session, org }) {
         { value: 'active', label: 'Active' },
         { value: 'inactive', label: 'Inactive' },
     ];
+    const localDataCheck = (action, data) => {
+        let resObj = {
+            success: true,
+            message: '',
+        }
+        try {
+
+            // check if agenda is present and valid
+            if (!data.agenda) {
+                resObj.success = false;
+                resObj.message = `Agenda is required`;
+            } else if (!data.agenda.length) {
+                resObj.success = false;
+                resObj.message = 'At least one agenda item is required';
+            }
+
+            // make sure each agenda item has target platforms
+            if (data.agenda && Array.isArray(data.agenda)) {
+                for (let i = 0; i < data.agenda.length; i++) {
+                    const item = data.agenda[i];
+                    if (!item.target_platforms || !Array.isArray(item.target_platforms) || item.target_platforms.length === 0) {
+                        resObj.success = false;
+                        resObj.message = `Agenda schedule ${i + 1} must have at least one target platform`;
+                        return resObj;
+                    }
+                }
+            }
+
+            return resObj;
+
+        } catch (error) {
+            console.error('Local data check error: ', error);
+            resObj.success = false;
+            resObj.message = error.message || 'Local data check failed';
+            return false;
+        }
+    };
 
     const handleNewItem = async (item) => {
         let resObj = {
@@ -54,6 +93,12 @@ export default function Campaigns({ pathname, user, account, session, org }) {
         try {
             let toSaveData = { ...item };
             toSaveData.org_id = org ? org.id : null;
+            toSaveData = adjustRelationalData({ collection: collectionName, data: toSaveData });
+            let lda = localDataCheck('create', toSaveData);
+            if (!lda.success) {
+                resObj = lda;
+                return resObj;
+            }
 
             if (toSaveData.org_id === undefined) {
                 notify({ type: 'error', message: 'Organization ID is required' });
@@ -108,22 +153,16 @@ export default function Campaigns({ pathname, user, account, session, org }) {
         // console.log('handleUpdateItem : ', item);
         // return resObj;
 
-
         try {
             let toSaveData = { ...item };
-            // if avatar_id is not set, remove it from the data to avoid foreign key constraint error
-            if (!toSaveData.avatar_id) {
-                delete toSaveData.avatar_id;
+            toSaveData = adjustRelationalData({ collection: collectionName, data: toSaveData });
+
+            let lda = localDataCheck('update', toSaveData);
+            if (!lda.success) {
+                resObj = lda;
+                return resObj;
             }
-            if (!toSaveData.sources || toSaveData.sources.length === 0) {
-                delete toSaveData.sources;
-            }
-            // delete relational data that should not be directly updated
-            ['avatar'].forEach(relKey => {
-                if (toSaveData[relKey]) {
-                    delete toSaveData[relKey];
-                }
-            });
+
 
             const response = await saUpdateItem({
                 collection: collectionName,
@@ -137,13 +176,13 @@ export default function Campaigns({ pathname, user, account, session, org }) {
 
             if (response && response.success) {
                 _setData(prev => prev.map(i => i.id === item.id ? response.data : i));
-                // notify({ type: 'success', message: 'Campaign updated successfully' });
+                notify({ type: 'success', message: `${cdn} updated successfully` });
                 resObj.success = true;
                 resObj.data = response.data;
                 resObj.message = 'Done';
             } else {
-                notify({ type: 'error', message: response.message || 'Failed to update campaign' });
-                resObj.message = response.message || 'Failed to update campaign';
+                notify({ type: 'error', message: response.message || `Failed to update ${cdn}` });
+                resObj.message = response.message || `Failed to update ${cdn}`;
                 resObj.success = false;
             }
 
@@ -296,7 +335,7 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                 <Table
                     className="card-1 min-w-full"
                     editable={true}
-                    editableInline={true}
+                    editableInline={false}
                     allowAddNew={true}
                     modalType="expandable"
                     actions={['edit', 'delete']}

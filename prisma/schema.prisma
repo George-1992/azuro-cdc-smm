@@ -77,8 +77,9 @@ model organizations {
   description String?
   timezone    String? @default("UTC")
 
-  webhooks Json? @default("{}")
-  configs  Json? @default("{}")
+  webhook  String? @default("")
+  webhooks Json?   @default("{}")
+  configs  Json?   @default("{}")
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -94,6 +95,7 @@ model organizations {
   campaigns    campaigns[]
   publications publications[]
   medias       medias[]
+  ideas        ideas[]
 
   @@index([name])
   @@index([account_id])
@@ -124,9 +126,9 @@ model sources {
   url                String?
   raw_text           String?
   text_output        String?
-  json_chapters      Json?    @default("{}")
-  text_stamps_output String?
-  internal_note      String?
+  json_chapters      Json?    @default("[]")
+  text_stamps_output String?  @default("")
+  internal_note      String?  @default("")
   config             Json?    @default("{}")
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
@@ -150,7 +152,6 @@ model avatars {
   notes              String?
   configs            Json?   @default("{}")
   elvenlabs_voice_id String?
-  medias             Json?   @default("[]")
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -160,6 +161,7 @@ model avatars {
 
   campaigns    campaigns[]
   publications publications[]
+  medias       medias[]
 
   @@index([org_id])
   @@index([name])
@@ -202,7 +204,6 @@ model publications {
   language           String? @default("en")
   title              String? @default("")
   description        String? @default("")
-  media              String? @default("")
   script             String? @default("")
   message            String? @default("")
   notes              String? @default("")
@@ -213,13 +214,13 @@ model publications {
   published_at DateTime?
 
   campaign_id String?
-  campaign    campaigns? @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  campaign    campaigns?    @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
   avatar_id   String?
-  avatar      avatars?   @relation(fields: [avatar_id], references: [id], onDelete: Cascade)
+  avatar      avatars?      @relation(fields: [avatar_id], references: [id], onDelete: Cascade)
   sources     sources[]
-
-  org_id String
-  org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  medias      medias[]
+  org_id      String
+  org         organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -233,14 +234,31 @@ model publications {
 model medias {
   id         String   @id @default(cuid())
   url        String
-  type       String
+  key        String?  @default("")
+  type       String?
   metadata   Json?    @default("{}")
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  org_id       String
+  org          organizations  @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  avatars      avatars[]
+  publications publications[]
+
+  @@unique([key])
+  @@unique([url])
+  @@index([org_id])
+  @@index([type])
+}
+
+model ideas {
+  id          String @id @default(cuid())
+  text        String
+  json_stamps Json?  @default("{}")
+
   org_id String
   org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
-  @@index([org_id])
-  @@index([type])
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }

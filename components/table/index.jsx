@@ -59,7 +59,8 @@ export const Table = ({
     onRowDelete = (rowIndex, rowData) => { console.log('Row Delete:', rowIndex, rowData); },
     onAddNew = (newRowData) => { console.log('Add New Row:', newRowData); return { success: false } },
     onPreview = (rowData) => { console.log('Preview:', rowData); },
-    onFilter = () => { }
+    onFilter = () => { },
+    newItemChange = () => { }
 }) => {
 
 
@@ -219,6 +220,7 @@ export const Table = ({
             }
         });
         _setNewItem(emptyRow);
+        newItemChange(emptyRow);
     };
 
     const handleActionPreview = (row) => {
@@ -229,6 +231,7 @@ export const Table = ({
         _setEditingItemMain(null);
         _setDeletingItem(null);
         _setNewItem(null);
+        newItemChange(null);
     }
 
 
@@ -272,10 +275,11 @@ export const Table = ({
                 notify({ type: 'error', message: response && response.message ? response.message : 'Error saving row' });
                 return;
             } else {
-                notify({ type: 'success', message: 'Done' });
+                // notify({ type: 'success', message: 'Done' });
                 _setNewItem(null);
                 _setEditingItemMain(null);
                 _setDeletingItem(null);
+                newItemChange(null);
             }
 
         } catch (error) {

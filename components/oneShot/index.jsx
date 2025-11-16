@@ -4,11 +4,11 @@ import { Dropdown } from "@/components/other/dropdown";
 import SourceTypeItem, { getTypeFromUrl } from "@/components/other/sourceTypeItem";
 import StatusItem from "@/components/other/statusItem";
 import { Checkbox, Toggle } from "@/components/other/toggle";
-import { saCreatePublication, saGetItems } from "@/components/serverActions.jsx";
+import { saCreateItem, saGetItems } from "@/components/serverActions.jsx";
 import { notify } from "@/components/sonnar/sonnar";
 import { contentTypeOptions, languageOptions, socialMediaPlatforms, weekdayOptions } from "@/data/types";
 import { generateName, toDisplayStr } from "@/utils/other";
-import _ from "lodash";
+import _, { map } from "lodash";
 import { ChevronsUpDownIcon, CircleSlashIcon, StickyNoteIcon, VideoIcon, WandSparklesIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -38,6 +38,7 @@ export default function OneShot({ org, onSuccess = () => { } }) {
         scheduled_at: new Date().toISOString(), // ISO string
         global_inspiration: '',
         target_platforms: [],
+        sources: [],
     });
     const [_avatars, _setAvatars] = useState([]);
     const [_sources, _setSources] = useState([]);
@@ -79,15 +80,38 @@ export default function OneShot({ org, onSuccess = () => { } }) {
 
     const handleSubmit = async (newData) => {
         // console.log('Publications data changed: ', newData);
-
         try {
             // Call the create publication API
             let toSaveData = { ...newData };
+            toSaveData.org_id = org.id;
             if (_isFastMode) {
                 toSaveData.isFastMode = true;
             }
-            const response = await saCreatePublication({ data: toSaveData, org: org });
-            console.log('response: ', response);
+
+            // delete relational data that should not be directly updated
+            // or move relational data to connect format
+            ['avatar', 'sources'].forEach(relKey => {
+                if (toSaveData[relKey]) {
+                    // if its an array move to connect format
+                    if (Array.isArray(toSaveData[relKey])) {
+                        console.log('toSaveData[relKey]: ', toSaveData[relKey]);
+
+                        toSaveData[relKey] = {
+                            connect: toSaveData[relKey].map(id => ({ id }))
+                        };
+
+                    } else {
+                        delete toSaveData[relKey];
+                    }
+                }
+            });
+
+            // console.log('toSaveData: ', toSaveData);
+            // return;
+
+
+            const response = await saCreateItem({ collection: 'publications', data: toSaveData });
+            // console.log('response: ', response);
 
             if (response?.success) {
                 notify({ type: 'success', message: 'Created successfully!' });
@@ -142,6 +166,7 @@ export default function OneShot({ org, onSuccess = () => { } }) {
         label: source.name
     }));
 
+    // console.log('_data: ', _data);
 
     return (
         <div className="w-full p-2 flex flex-col gap-2">
@@ -175,7 +200,8 @@ export default function OneShot({ org, onSuccess = () => { } }) {
                     }}
                     renderOrder={[
                         ['language', 'content_type'],
-                        ['avatar_id', 'source_id'],
+                        ['avatar_id'],
+                        ['sources'],
                         ['global_inspiration'],
                         ['agendaHeading'],
                         ['weekday', 'time'],
@@ -302,15 +328,35 @@ export default function OneShot({ org, onSuccess = () => { } }) {
                             clearable: true
                         },
                         {
-                            name: 'source_id',
-                            label: 'Source',
+                            name: 'sources',
+                            label: 'Sources',
                             width: 'w-32',
                             type: 'select',
                             required: false,
+                            multiple: true,
                             options: sourceOptions,
-                            placeholder: 'Select source',
-                            disabled: false,
-                            clearable: true
+                            placeholder: 'Select sources',
+                            clearable: true,
+                            // getValue: (item) => {
+                            //     let r = item.sources
+                            //         ? map(item.sources, 'id')
+                            //         : [];
+                            //     const v = _.get(item, 'sources.connect', null);
+                            //     if (v) {
+                            //         r = map(v, 'id');
+                            //     }
+                            //     // console.log('getValue item: ', item);
+                            //     // console.log('getValue r: ', r);
+                            //     return r;
+                            // },
+                            // setValue: (item, value) => {
+                            //     let newItem = { ...item };
+                            //     newItem.sources = {
+                            //         connect: value.map(id => ({ id }))
+                            //     }
+                            //     // console.log('setValue newItem: ', newItem);
+                            //     return newItem;
+                            // }
                         },
                         {
                             name: 'global_inspiration',

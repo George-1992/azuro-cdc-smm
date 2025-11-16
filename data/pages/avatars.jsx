@@ -1,22 +1,28 @@
 'use client';
 import Loading from "@/components/other/loading";
-import { saCreateItem, saDeleteItem, saGetItems, saUpdateItem } from "@/components/serverActions.jsx";
+import { saCreateItem, saDeleteItem, saGetItem, saGetItems, saUpdateItem } from "@/components/serverActions.jsx";
 import { notify } from "@/components/sonnar/sonnar";
 import Table from "@/components/table";
 import { useState, useEffect } from "react";
 import allTypes, { avatarTones } from "@/data/types";
 import StatusItem from "@/components/other/statusItem";
 import SourceTypeItem, { getTypeFromUrl } from "@/components/other/sourceTypeItem";
-import { MediaUploader } from "@/components/mediaLibrary";
+import MediaLibrary, { InlineMediaLibrary, MediaUploader } from "@/components/mediaLibrary";
 import Uploader from "@/components/mediaLibrary/filepond";
+import { getFileTypeFromUrl } from "@/utils/other";
+import { adjustRelationalData } from "@/utils/data";
+import { cloneDeep } from "lodash";
 
 export default function Avatars({ pathname, user, account, session, org }) {
 
-
-
+    const orgId = org ? org.id : null;
     const collectionName = 'avatars';
     const [isLoading, setIsLoading] = useState(true);
     const [_data, _setData] = useState([]);
+    const [_dataOriginal, _setDataOriginal] = useState([]);
+
+
+
 
     const handleNewItem = async (item) => {
         let resObj = {
@@ -25,13 +31,24 @@ export default function Avatars({ pathname, user, account, session, org }) {
             data: null,
         }
         try {
+            console.log('item: ', item);
+
             // add account_id to item if you have account-based filtering
             // item.account_id = account ? account.id : null;
-            item.org_id = org ? org.id : null;
+            let toSaveData = cloneDeep(item);
+            toSaveData.medias = {};
+            toSaveData.org_id = orgId;
+            toSaveData = adjustRelationalData({
+                data: toSaveData,
+                collection: collectionName,
+                originalData: _dataOriginal
+            });
+            console.log('toSaveData: ', toSaveData);
+
 
             const response = await saCreateItem({
                 collection: collectionName,
-                data: item
+                data: toSaveData
             });
 
             console.log(`Response from adding new ${collectionName}: `, response);
@@ -64,11 +81,24 @@ export default function Avatars({ pathname, user, account, session, org }) {
         }
         try {
 
+            let toSaveData = cloneDeep(item);
+            toSaveData.org_id = orgId;
+            toSaveData = adjustRelationalData({
+                collection: collectionName,
+                data: toSaveData,
+                originalData: _dataOriginal.find(d => d.id === item.id)
+            });
+            // console.log('handleUpdateItem item: ', item);
+            // console.log('handleUpdateItem _dataOriginal: ', _dataOriginal.find(d => d.id === item.id));
+            console.log('handleUpdateItem toSaveData: ', toSaveData);
+            // return resObj
+
             const response = await saUpdateItem({
                 collection: collectionName,
                 query: {
                     where: { id: item.id },
-                    data: item
+                    data: toSaveData,
+                    include: { medias: true }
                 }
             });
 
@@ -132,6 +162,27 @@ export default function Avatars({ pathname, user, account, session, org }) {
             return resObj;
         }
     };
+
+
+
+
+    const handleMediaChange = (itemId, updatedMedias) => {
+        try {
+            const newData = [..._data];
+            newData.forEach((d, i) => {
+                if (d.id === itemId) {
+                    newData[i].medias = updatedMedias;
+                }
+            });
+            console.log('newData ', newData);
+            _setData(newData);
+
+        } catch (error) {
+            console.error('Error handling media change: ', error);
+        }
+    }
+
+
     // initial load, fetch data
     useEffect(() => {
         const body = async () => {
@@ -146,6 +197,9 @@ export default function Avatars({ pathname, user, account, session, org }) {
                         },
                         orderBy: {
                             created_at: 'desc'
+                        },
+                        include: {
+                            medias: true
                         }
                     }
                 });
@@ -154,6 +208,7 @@ export default function Avatars({ pathname, user, account, session, org }) {
 
                 if (response && response.success) {
                     _setData(response.data || []);
+                    _setDataOriginal(cloneDeep(response.data) || []);
                 } else {
                     notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
                 }
@@ -167,25 +222,8 @@ export default function Avatars({ pathname, user, account, session, org }) {
         body();
     }, []);
 
-    // console.log('_data: ',_data);
-
-
-    // model avatars {
-    //   id                 String @id @default (cuid())
-    //   name               String
-    //   tone               String
-    //   notes              String ?
-    //             configs            Json ? @default ("{}")
-    //   elvenlabs_voice_id String ?
-    //             created_at         DateTime @default (now())
-    //   updated_at         DateTime @updatedAt
-
-    //   org_id String
-    //   org    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade)
-
-    //         @@index([name])
-    //     }
-
+    // console.log('_data: ', _data);
+    // console.log('Avatars org: ', org);
 
 
     return (
@@ -199,10 +237,14 @@ export default function Avatars({ pathname, user, account, session, org }) {
                 <Table
                     className="card-1 min-w-full"
                     editable={true}
-                    editableInline={true}
+                    editableInline={false}
                     allowAddNew={true}
                     actions={['edit', 'delete']}
-                    tableExcludeKeys={['idea_inspiration', 'text', 'internal_note', 'config']}
+                    tableExcludeKeys={[
+                        'idea_inspiration', 'text',
+                        'internal_note', 'config',
+                        // 'medias'
+                    ]}
                     previewKey="notes"
                     editRenderOrder={[
                         ['name'],
@@ -248,10 +290,62 @@ export default function Avatars({ pathname, user, account, session, org }) {
                             title: 'Medias',
                             width: 'w-96',
                             required: false,
-                            Component: ({ value }) => {
+                            multiple: true,
+                            Component: (props) => {
+                                return (
+                                    <div>{props?.value?.length || 0}</div>
+                                    // <MediaLibrary medias={props.row.medias} size='sm' />
+                                )
+                            },
+                            EditComponent: (props) => {
+                                const row = props.row || {};
+                                // console.log('EditComponent: ', props);
+
                                 return (
                                     <div className="w-full">
-                                        <Uploader />
+                                        <div className="flex flex-col gap-3">
+                                            <InlineMediaLibrary
+                                                org={org}
+                                                types={['image']}
+                                                onChange={(media) => {
+                                                    // console.log('EditComponent imd: ', media);
+                                                    if (props.onChange) {
+                                                        const newMedias = props.row.medias || [];
+                                                        if (!newMedias.find(m => m.id === media.id)) {
+                                                            newMedias.push(media);
+                                                        }
+                                                        props.onChange({
+                                                            target: {
+                                                                name: 'medias',
+                                                                value: newMedias
+                                                            }
+                                                        });
+                                                    }
+                                                }}
+                                            />
+
+                                            <div>
+                                                <MediaLibrary
+                                                    org={org}
+                                                    size='md'
+                                                    allowUpload={false}
+                                                    allowEdit={false}
+                                                    standAloneMode={true}
+                                                    medias={row.medias}
+                                                    onChange={(updatedMedias) => {
+                                                        // console.log('MediaLibrary updatedMedias: ', updatedMedias);
+                                                        if (props.onChange) {
+                                                            props.onChange({
+                                                                target: {
+                                                                    name: 'medias',
+                                                                    value: updatedMedias
+                                                                }
+                                                            });
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 )
                             }

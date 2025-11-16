@@ -32,6 +32,8 @@ export default function FormBuilder({
         : fields.map(f => [f.name])
     )
 
+    // console.log('_renderOrder: ', _renderOrder);
+
 
     // if field has getValue func call it to set initial value
     const handleGetValue = (field) => {
@@ -191,9 +193,16 @@ export default function FormBuilder({
                 <div className="w-full flex flex-col gap-3">
                     {
                         _renderOrder && _renderOrder.map((rowItems, idx) => {
-                            const rowFields = fields.filter(f => rowItems.includes(f.name) && !f.hidden);
+                            const rowFields = fields.filter(f => (rowItems.includes(f.name) || rowItems.includes(f.key)) && !f.hidden);
 
-                            if (!rowFields || rowFields.length === 0) return null;
+
+                            // console.log('rowFields 1: ', {
+                            //     rowItems,
+                            // });
+                            if (!rowFields || rowFields.length === 0) {
+                                // console.log('lost fields: ', { rowItems, rowFields, fields });
+                                return null
+                            };
 
 
                             return (

@@ -363,6 +363,62 @@ export const saDeleteItem = async ({
         // Prisma.$disconnect();
     }
 };
+export const saDeleteItems = async ({
+    collection = '',
+    query = null,
+}) => {
+    let resObj = {
+        success: false,
+        message: 'Unknown error',
+        data: null
+    }
+    try {
+        if (!collection) {
+            resObj.message = 'Collection is required';
+            return resObj;
+        }
+        if (!query) {
+            resObj.message = 'Query is required';
+            return resObj;
+        }
+
+        let deletedItems = await Prisma[collection].deleteMany(query);
+        // if (collection === 'medias') {
+        //     console.log('medias delete >>>> ');
+        //     s3commands.delete(
+        //         query.where &&
+        //             query.where.id &&
+        //             Array.isArray(query.where.id.in) ?
+        //             query.where.id.in.map(id => `media/${id}`) : []
+        //     );
+        //     deletedItems = await Prisma[collection].deleteMany(query);
+
+        // } else {
+        //     deletedItems = await Prisma[collection].deleteMany(query);
+        // }
+
+        if (!deletedItems) {
+            resObj.message = 'Items not deleted';
+            return resObj;
+        }
+
+        resObj.success = true;
+        resObj.message = 'Items deleted successfully';
+        resObj.data = deletedItems;
+
+        return resObj;
+
+    } catch (error) {
+        console.error('Error in deleteItems: ', error);
+        return {
+            success: false,
+            message: error.message || 'An error occurred',
+            data: null
+        }
+    } finally {
+        // Prisma.$disconnect();
+    }
+};
 
 export const saSendEmail = async ({
     template = null,
@@ -417,77 +473,114 @@ export const saSendEmail = async ({
 
 
 
-export const saCreatePublication = async ({ data, org }) => {
-    let resObj = {
-        success: false,
-        warning: false,
-        message: '',
-        data: null,
-    }
-    try {
+// export const saCreatePublication = async ({ data, org }) => {
+//     let resObj = {
+//         success: false,
+//         warning: false,
+//         message: '',
+//         data: null,
+//     }
+//     try {
 
-        let toSaveData = { ...data }
-        toSaveData.org_id = org.id;
+//         let toSaveData = { ...data }
+//         toSaveData.org_id = org.id;
 
-        // create publication
-        const createdPublication = await Prisma.publications.create({
-            data: toSaveData
-        });
-        // console.log('createdPublication: ',createdPublication);
+//         // create publication
+//         const createdPublication = await Prisma.publications.create({
+//             data: toSaveData
+//         });
+//         // console.log('createdPublication: ',createdPublication);
 
-        resObj.success = true;
-        resObj.message = 'Publication created successfully';
-        resObj.data = createdPublication;
-        return resObj;
-    } catch (error) {
-        console.error(error);
-        resObj.message = error.message || 'An error occurred';
-        resObj.warning = true;
-    }
-}
+//         resObj.success = true;
+//         resObj.message = 'Publication created successfully';
+//         resObj.data = createdPublication;
+//         return resObj;
+//     } catch (error) {
+//         console.error(error);
+//         resObj.message = error.message || 'An error occurred';
+//         resObj.warning = true;
+//     }
+// }
 
 
-console.log('rocess.env >>>>>>>>>>>: ', process.env.DOMAIN);
 
 
 // n8n webhook handlers
+
+
 export const handleN8nWebhook = async ({ action, collection, data }) => {
     try {
-        let webhooks = null;
-        let toSendData = data;
-        const settings = await Prisma.organizations.findUnique({
-            where: { id: data.org_id },
-        });
-        if (settings && settings.webhooks) {
-            webhooks = settings.webhooks;
+        console.log('handleN8nWebhook collection: ', collection);
+
+        if (!collection || !data) {
+            console.error('Collection and data are required for webhook handling');
+            return;
         }
-        if (!webhooks) {
-            console.error('No webhooks configured');
+        if (['sources', 'publications', 'contents', 'avatars'].includes(collection) === false) {
+            // currently only sources collection is supported
             return;
         }
 
 
+        let webhook = null;
+        let toSendData = data;
+        const settings = await Prisma.organizations.findUnique({
+            where: { id: data.org_id },
+        });
+        if (settings && settings.webhook) {
+            webhook = settings.webhook;
+        }
+        if (!webhook) {
+            console.error('No webhook configured');
+            return;
+        }
+
+        // if its publications or contents, fetch from db including sources and avatar
+        if (['publications', 'contents'].includes(collection)) {
+            let d = {
+                where: { id: toSendData.id },
+                include: {
+                    sources: true,
+                    avatar: true,
+                }
+            };
+            if (collection === 'content' || collection === 'publications') {
+                d.include = {
+                    avatar: {
+                        include: {
+                            medias: true,
+                        }
+                    },
+                }
+            }
+            if (collection === 'avatars') {
+                d.include = {
+                    medias: true,
+                }
+            }
+
+            toSendData = await Prisma[collection].findUnique(d);
+        }
+
+
+
         toSendData.config = toSendData.config || {};
         toSendData.config.requestDomain = process.env.DOMAIN || null;
-        console.log('toSendData.config: ', toSendData.config);
 
-        if (collection === 'sources') {
-            console.log('handleN8nWebhook data: ', toSendData);
-            if (webhooks.sources) {
-                // toSendData.config.webhook = webhooks.sources;
-                //make POST request to each webhook url
-                const url = webhooks.sources;
-                // console.log('url: ', url);
-
-                const result = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(toSendData)
-                });
-                // console.log('result: ', result);
-            }
+        console.log('handleN8nWebhook toSendData: ', toSendData);
+        if (webhook) {
+            const url = webhook;
+            const result = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    collection: collection,
+                    data: toSendData,
+                })
+            });
+            // console.log('result: ', result);
         }
 
     } catch (error) {

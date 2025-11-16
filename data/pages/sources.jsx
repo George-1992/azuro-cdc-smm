@@ -16,6 +16,7 @@ export default function Sources({ pathname, user, account, session, org }) {
     const collectionName = 'sources';
     const [isLoading, setIsLoading] = useState(true);
     const [_data, _setData] = useState([]);
+    const [isNewItem, setIsNewItem] = useState(false);
 
     const handleNewItem = async (item) => {
         let resObj = {
@@ -134,6 +135,7 @@ export default function Sources({ pathname, user, account, session, org }) {
         }
     };
 
+
     // initial load, fetch data
     useEffect(() => {
         const body = async () => {
@@ -171,6 +173,7 @@ export default function Sources({ pathname, user, account, session, org }) {
 
 
     // console.log('_data: ',_data);
+    // console.log('isNewItem: ', isNewItem);
 
     return (
         <div className="container-main w-full flex flex-col gap-6">
@@ -183,14 +186,27 @@ export default function Sources({ pathname, user, account, session, org }) {
                 <Table
                     className="card-1 min-w-full"
                     editable={true}
-                    editableInline={true}
+                    editableInline={false}
                     allowAddNew={true}
+                    data={_data}
+                    onAddNew={handleNewItem}
+                    onRowChange={handleUpdateItem}
+                    onRowDelete={handleDeleteItem}
+                    newItemChange={(item) => {
+                        setIsNewItem(item ? true : false);
+                    }}
+                    onChange={(newData) => {
+                        console.log('Sources data changed: ', newData);
+                    }}
                     actions={['edit', 'delete']}
-                    tableExcludeKeys={['idea_inspiration', 'raw_text', 'internal_note', 'config', 'medias']}
+                    tableExcludeKeys={[
+                        'idea_inspiration', 'raw_text',
+                        'internal_note', 'config', 'medias'
+                    ]}
                     previewKey="notes"
                     editRenderOrder={[
                         ['name'],
-                        ['type'],
+                        ['type', 'status'],
                         ['url'],
                         // ['fixed_idea'],
                         // ['idea_inspiration'],
@@ -207,30 +223,13 @@ export default function Sources({ pathname, user, account, session, org }) {
                             validateKey: 'length',
                             defaultValue: 'Untitled Source',
                         },
-                        // {
-                        //     key: 'status',
-                        //     type: 'select',
-                        //     title: 'Status',
-                        //     width: 'w-48',
-                        //     required: true,
-                        //     disabled: true,
-                        //     defaultValue: allTypes[collectionName].options[0],
-                        //     options: allTypes[collectionName].options,
-                        //     Component: (props) => {
-                        //         // console.log('props: ', props);
-                        //         const { value } = props;
-                        //         return <StatusItem
-                        //             status={value}
-                        //         />
-                        //     },
-                        // },
                         {
                             key: 'type',
                             title: 'Type',
                             width: 'w-48',
                             type: 'select',
-                            required: true,
-                            disabled: false,
+                            required: false,
+                            disabled: !isNewItem,
                             defaultValue: 'n/a',
                             options: sourceTypes,
                             // func: (data) => {
@@ -245,10 +244,28 @@ export default function Sources({ pathname, user, account, session, org }) {
                             // },
                         },
                         {
+                            key: 'status',
+                            type: 'select',
+                            title: 'Status',
+                            width: 'w-48',
+                            required: false,
+                            disabled: !isNewItem,
+                            defaultValue: allTypes[collectionName].options[0],
+                            options: allTypes[collectionName].options,
+                            Component: (props) => {
+                                // console.log('props: ', props);
+                                const { value } = props;
+                                return <StatusItem
+                                    status={value}
+                                />
+                            },
+                        },
+                        {
                             key: 'url',
                             title: 'URL',
                             width: 'w-48',
-                            required: true,
+                            required: false,
+                            disabled: !isNewItem,
                             validateKey: 'url',
                         },
                         // {
@@ -273,23 +290,24 @@ export default function Sources({ pathname, user, account, session, org }) {
                             title: 'Text (Raw Input/source)',
                             width: 'w-48',
                             required: false,
-                            disabled: false,
+                            disabled: !isNewItem,
                             // validateKey: 'length',
                         },
-                        // {
-                        //     key: 'text_output',
-                        //     type: 'textarea',
-                        //     title: 'Text (Output)',
-                        //     width: 'w-48',
-                        //     required: false,
-                        //     disabled: true,
-                        //     // validateKey: 'length',
-                        // },
+                        {
+                            key: 'text_output',
+                            type: 'textarea',
+                            title: 'Text (Output)',
+                            width: 'w-48',
+                            required: false,
+                            disabled: !isNewItem,
+                            // validateKey: 'length',
+                        },
                         {
                             key: 'medias',
                             title: 'Medias',
                             width: 'w-96',
                             required: false,
+                            disabled: !isNewItem,
                             Component: ({ value }) => {
                                 return (
                                     <div className="w-full">
@@ -299,13 +317,7 @@ export default function Sources({ pathname, user, account, session, org }) {
                             }
                         },
                     ]}
-                    data={_data}
-                    onAddNew={handleNewItem}
-                    onRowChange={handleUpdateItem}
-                    onRowDelete={handleDeleteItem}
-                    onChange={(newData) => {
-                        console.log('Sources data changed: ', newData);
-                    }}
+
                 />
 
                 <Loading loading={isLoading} />

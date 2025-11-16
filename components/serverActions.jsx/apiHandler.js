@@ -1,6 +1,7 @@
 'use server';
 
 import Prisma from "@/services/prisma";
+import { nanoid } from "nanoid";
 
 const { NextResponse } = require("next/server");
 
@@ -35,7 +36,7 @@ export const handleApiRequest = async (req, res) => {
         }
 
 
-        // console.log('METHOD: ', METHOD);
+        console.log('METHOD: ', METHOD);
         // console.log('HEADERS: ', HEADERS);
 
         if (METHOD === 'GET') {
@@ -45,8 +46,10 @@ export const handleApiRequest = async (req, res) => {
             if (isFile) {
                 // handle file upload
                 console.log('isFile: ', isFile);
-                return await handleFileUploadRequest(req, res);
+                // return await handleFileUploadRequest(req, res);
             }
+            return await handleApiPostRequest(req, res);
+
         }
 
 
@@ -155,10 +158,14 @@ export const handleApiPostRequest = async (req, res) => {
         data: null,
     }
     try {
+        // console.log('handleApiPostRequest started');
+
         const body = await req.json();
         const collection = body.collection;
         const reqData = body.data;
-        if (!collection === 'sources') {
+        // console.log('handleApiPostRequest body: ', body);
+
+        if (!collection) {
             resObj.message = 'Collection is required for POST requests';
             return NextResponse.json(resObj);
         }
@@ -166,21 +173,58 @@ export const handleApiPostRequest = async (req, res) => {
             resObj.message = 'Data is required for POST requests';
             return NextResponse.json(resObj);
         }
+        // console.log('handleApiPostRequest collection: ', collection);
+        // console.log('handleApiPostRequest reqData: ', reqData);
 
-        if (collection === 'sources') {
-            // update source
-            for (const sData of reqData) {
-                if (sData.id) {
-                    // update existing
-                    await Prisma.sources.update({
-                        where: { id: sData.id },
+
+        // update source
+        for (const sData of reqData) {
+
+            let existingSource = null;
+            // check if source exists
+            if (sData.id) {
+                let rd = { where: { id: sData.id } };
+                existingSource = await Prisma[collection].findUnique(rd);
+            }
+            // console.log('existingSource: ', existingSource);
+            // console.log('collection: ', collection);
+            // console.log('existingSource: ', existingSource);
+
+            if (!existingSource) {
+                if (collection === 'ideas') {
+                    // if its for ideas, create new
+
+                    // make sure org_id is provided
+                    if (!sData.org_id) {
+                        resObj.message = `org_id is required to create new ${collection}`;
+                        break;
+                    }
+
+                    await Prisma[collection].create({
                         data: sData,
                     });
+                    resObj.success = true;
+                    resObj.message = 'Data created successfully';
+
+                } else {
+                    // exit with error
+                    resObj.message = `${collection} with ids ${[sData.id]} does not exist`;
+                    break;
                 }
+
+            } else {
+                // update existing
+                await Prisma[collection].update({
+                    where: { id: sData.id },
+                    data: sData,
+                });
+                resObj.success = true;
+                resObj.message = 'Data updated successfully';
             }
+
         }
-        resObj.success = true;
-        resObj.message = 'Data updated successfully';
+
+
         return NextResponse.json(resObj);
 
     } catch (error) {

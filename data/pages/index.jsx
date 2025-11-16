@@ -4,6 +4,7 @@ import Avatars from "@/data/pages/avatars";
 import Campaigns from "@/data/pages/campaigns";
 import Credentials from "@/data/pages/credentials";
 import Home from "@/data/pages/home";
+import MediaLibraryPage from "@/data/pages/medias";
 import Profile from "@/data/pages/profile"
 import Publications from "@/data/pages/publications";
 import Settings from "@/data/pages/settings";
@@ -11,7 +12,7 @@ import Sources from "@/data/pages/sources";
 import Team from "@/data/pages/team";
 import Test from "@/data/pages/test";
 import {
-    CircleGauge, LibraryBig,
+    CircleGauge, ImageIcon, LibraryBig,
     MegaphoneIcon, Newspaper, SettingsIcon,
     SquareUser, Users
 } from "lucide-react";
@@ -88,6 +89,11 @@ const pagesMap = [
         Component: (props) => { return <Publications {...props} />; },
         // Component: (props) => { return <div>Sources</div> },
     },
+    {
+        pathname: '/media-library',
+        Component: (props) => { return <MediaLibraryPage {...props} />; },
+        // Component: (props) => { return <div>Sources</div> },
+    }
 ]
 
 
@@ -129,6 +135,12 @@ export const pagesMapSidebar = [
         name: 'Sources',
         icon: (props) => <LibraryBig {...props} />,
         href: '/sources',
+        subItems: []
+    },
+    {
+        name: 'Media Library',
+        icon: (props) => <ImageIcon {...props} />,
+        href: '/media-library',
         subItems: []
     },
     // {

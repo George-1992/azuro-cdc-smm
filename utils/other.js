@@ -1,4 +1,4 @@
- 
+
 export const isFilePath = (path) => {
     let rs = false;
     try {
@@ -191,5 +191,28 @@ export const generateName = (prefixStr = 'it-') => {
     } catch (error) {
         console.log('generateName error ==> ', error);
         return `${prefixStr}_error`;
+    }
+}
+
+
+export const getFileTypeFromUrl = (url) => {
+    try {
+        if (!url || typeof url !== 'string') return 'unknown';
+        const extension = url.split('.').pop().toLowerCase().split(/\#|\?/)[0];
+
+        const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp', 'tiff'];
+        const videoTypes = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv'];
+        const audioTypes = ['mp3', 'wav', 'ogg', 'm4a', 'flac'];
+        const documentTypes = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'odt'];
+        if (imageTypes.includes(extension)) return 'image';
+        if (videoTypes.includes(extension)) return 'video';
+        if (audioTypes.includes(extension)) return 'audio';
+        if (['pdf'].includes(extension)) return 'pdf';
+        if (documentTypes.includes(extension)) return 'document';
+
+        return 'unknown';
+    } catch (error) {
+        console.log('getFileTypeFromUrl error ==> ', error);
+        return 'unknown';
     }
 }

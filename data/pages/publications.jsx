@@ -123,13 +123,13 @@ export default function Publications({ pathname, user, account, session, org }) 
 
             if (response && response.success) {
                 _setData(prev => prev.map(i => i.id === item.id ? response.data : i));
-                notify({ type: 'success', message: 'Publication updated successfully' });
+                notify({ type: 'success', message: `${collectionName} updated successfully` });
                 resObj.success = true;
                 resObj.data = response.data;
                 resObj.message = 'Done';
             } else {
-                notify({ type: 'error', message: response.message || 'Failed to update publication' });
-                resObj.message = response.message || 'Failed to update publication';
+                notify({ type: 'error', message: response.message || `Failed to update ${collectionName}` });
+                resObj.message = response.message || `Failed to update ${collectionName}`;
                 resObj.success = false;
             }
 
@@ -227,7 +227,7 @@ export default function Publications({ pathname, user, account, session, org }) 
                 <Table
                     className="card-1 min-w-full"
                     editable={true}
-                    editableInline={true}
+                    editableInline={false}
                     allowAddNew={true}
                     actions={['edit', 'delete', 'preview']}
                     tableExcludeKeys={['org_id']}
@@ -235,7 +235,6 @@ export default function Publications({ pathname, user, account, session, org }) 
                     editRenderOrder={[
                         ['name', 'status'],
                         ['title'],
-                        ['media'],
                         ['scheduled_at'],
                         ['description'],
                         ['notes'],
@@ -288,14 +287,6 @@ export default function Publications({ pathname, user, account, session, org }) 
                             width: 'w-64',
                             type: 'textarea',
                             placeholder: 'Enter script...',
-                        },
-                        {
-                            key: 'media',
-                            title: 'Media',
-                            width: 'w-64',
-                            // type: 'textarea',
-                            placeholder: 'Enter media URLs...',
-                            validationKey: 'url',
                         },
                         {
                             key: 'notes',

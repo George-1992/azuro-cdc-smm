@@ -15,6 +15,7 @@ import Image from "next/image";
 import { Building, TextInitial } from "lucide-react";
 import Timezones from "@/data/tomezones.json";
 import { TabContainer, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/other/tabs";
+import { webhook } from "twilio/lib/webhooks/webhooks";
 
 
 export default function Settings({ params, pathname, searchParams, session, user, account, org, orgs }) {
@@ -54,9 +55,10 @@ export default function Settings({ params, pathname, searchParams, session, user
     };
 
     let preOrg = { ...org };
-    if (!preOrg.webhooks) {
-        preOrg.webhooks = webhooksDefault;
-    }
+    preOrg.webhook = preOrg.webhook || '';
+    // if (!preOrg.webhooks) {
+    //     preOrg.webhooks = webhooksDefault;
+    // }
     if (!preOrg.configs) {
         preOrg.configs = {};
     }
@@ -93,6 +95,7 @@ export default function Settings({ params, pathname, searchParams, session, user
 
     const handleOrgUpdate = async (data) => {
 
+        // console.log('handleOrgUpdate data: ', data);
 
         try {
             setIsLoading(true);
@@ -100,27 +103,28 @@ export default function Settings({ params, pathname, searchParams, session, user
 
             let toSaveData = data ? {
                 name: data.name,
+                webhook: data.webhook,
             } : {};
-            if (data.webhooks) {
-                toSaveData.webhooks = data.webhooks;
-            }
+            // if (data.webhooks) {
+            //     toSaveData.webhooks = data.webhooks;
+            // }
             if (data.configs) {
                 toSaveData.configs = data.configs;
             }
 
-
-            const resData = await saUpdateItem({
+            // console.log('handleOrgUpdate toSaveData: ', data.id, toSaveData);
+            // return;
+            const _d = {
                 collection: 'organizations',
                 query: {
                     where: {
-                        id: _org.id
+                        id: data.id
                     },
                     data: toSaveData
                 }
-            });
-            // console.log('resData: ', resData);
+            }
 
-
+            const resData = await saUpdateItem(_d);
 
 
             if (resData && resData.success) {
@@ -235,7 +239,7 @@ export default function Settings({ params, pathname, searchParams, session, user
                         },
                     }
                 });
-                // console.log('thisOrg: ', thisOrg);
+                console.log('thisOrg: ', thisOrg);
 
                 if (thisOrg && thisOrg.success && thisOrg.data) {
                     _setOrg(thisOrg.data);
@@ -363,6 +367,33 @@ export default function Settings({ params, pathname, searchParams, session, user
                             </span>
                         </div>
                         <FormBuilder
+                            formData={_org || {}}
+                            isLoading={isActionLoading}
+                            fields={[{
+                                name: 'webhook',
+                                label: `n8n webhook URL`,
+                                placeholder: `Enter your n8n webhook URL`,
+                                type: 'url',
+                                required: true,
+                                hidden: false,
+                                disabled: false,
+                                validator: 'url',
+                                defaultValue: _org.webhook || ''
+                            }
+                            ]}
+                            onSubmit={(data) => {
+                                // console.log('data: ', data);
+
+                                let newOrg = { ..._org };
+                                newOrg.webhook = data.webhook;
+                                // console.log('newOrg: ', newOrg);
+
+                                handleOrgUpdate(newOrg);
+                                setIsPopupOpen(false);
+
+                            }}
+                        />
+                        {/* <FormBuilder
                             formData={_org.webhooks || {}}
                             isLoading={isActionLoading}
                             fields={
@@ -384,7 +415,7 @@ export default function Settings({ params, pathname, searchParams, session, user
                                 });
                                 setIsPopupOpen(false);
                             }}
-                        />
+                        /> */}
 
                     </div>
                 </TabsContent>
