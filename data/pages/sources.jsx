@@ -8,6 +8,7 @@ import allTypes, { sourceTypes } from "@/data/types";
 import StatusItem from "@/components/other/statusItem";
 import SourceTypeItem, { getTypeFromUrl } from "@/components/other/sourceTypeItem";
 import Uploader from "@/components/mediaLibrary/filepond";
+import MediaLibrary, { InlineMediaLibrary } from "@/components/mediaLibrary";
 
 export default function Sources({ pathname, user, account, session, org }) {
 
@@ -228,7 +229,7 @@ export default function Sources({ pathname, user, account, session, org }) {
                             title: 'Type',
                             width: 'w-48',
                             type: 'select',
-                            required: false,
+                            required: true,
                             disabled: !isNewItem,
                             defaultValue: 'n/a',
                             options: sourceTypes,
@@ -307,11 +308,65 @@ export default function Sources({ pathname, user, account, session, org }) {
                             title: 'Medias',
                             width: 'w-96',
                             required: false,
-                            disabled: !isNewItem,
-                            Component: ({ value }) => {
+                            multiple: true,
+                            Component: (props) => {
+                                return (
+                                    <div>{props?.value?.length || 0}</div>
+                                    // <MediaLibrary medias={props.row.medias} size='sm' />
+                                )
+                            },
+                            EditComponent: (props) => {
+                                const row = props.row || {};
+                                // console.log('EditComponent: ', props);
+
                                 return (
                                     <div className="w-full">
-                                        <Uploader />
+                                        <div className="flex flex-col gap-3">
+                                            <InlineMediaLibrary
+                                                org={org}
+                                                types={['pdf']}
+                                                onChange={(media) => {
+                                                    // console.log('EditComponent imd: ', media);
+                                                    if (props.onChange) {
+                                                        const newMedias = props.row.medias || [];
+                                                        if (!newMedias.find(m => m.id === media.id)) {
+                                                            newMedias.push(media);
+                                                        }
+
+                                                        // console.log('newMedias: ', newMedias);
+
+                                                        props.onChange({
+                                                            target: {
+                                                                name: 'medias',
+                                                                value: newMedias
+                                                            }
+                                                        });
+                                                    }
+                                                }}
+                                            />
+
+                                            <div>
+                                                <MediaLibrary
+                                                    org={org}
+                                                    size='md'
+                                                    allowUpload={false}
+                                                    allowEdit={false}
+                                                    standAloneMode={true}
+                                                    medias={row.medias}
+                                                    onChange={(updatedMedias) => {
+                                                        // console.log('MediaLibrary updatedMedias: ', updatedMedias);
+                                                        if (props.onChange) {
+                                                            props.onChange({
+                                                                target: {
+                                                                    name: 'medias',
+                                                                    value: updatedMedias
+                                                                }
+                                                            });
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 )
                             }

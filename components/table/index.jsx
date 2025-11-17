@@ -7,7 +7,7 @@ import FormBuilder from '@/components/formBuilder';
 import { notify } from '@/components/sonnar/sonnar';
 import DateInput from '@/components/date';
 import Select from '@/components/select';
-import { isEqual } from 'lodash';
+import { cloneDeep, isEqual } from 'lodash';
 import DateDisplay from '@/components/date/DateDisplay';
 import { widthMap } from './helper';
 import Link from 'next/link';
@@ -24,6 +24,8 @@ const passwordField = {
     validateKey: 'password'
 }
 
+const itemsPerPageOptions = [10, 15, 20, 25, 50, 100];
+
 // Table Component with full features
 export const Table = ({
     pathname = '',
@@ -32,7 +34,7 @@ export const Table = ({
     data = [],
     searchable = true,
     sortable = true,
-    paginated = false,
+    paginated = true,
     pageSize = 10,
     filterable = false,
     editable = false,
@@ -54,13 +56,16 @@ export const Table = ({
 
     modalType = 'popup', // 'popup' or 'expandable'
 
+    page = { skip: 0, take: 10, itemsPerPage: 10, total: 0 },
+
     onChange = (updatedData) => { console.log('updatedData:', updatedData); },
     onRowChange = (rowIndex, newRowData) => { console.log('Row Change:', rowIndex, newRowData); return { success: false } },
     onRowDelete = (rowIndex, rowData) => { console.log('Row Delete:', rowIndex, rowData); },
     onAddNew = (newRowData) => { console.log('Add New Row:', newRowData); return { success: false } },
     onPreview = (rowData) => { console.log('Preview:', rowData); },
     onFilter = () => { },
-    newItemChange = () => { }
+    newItemChange = () => { },
+    onPageChange = () => { },
 }) => {
 
 
@@ -108,6 +113,8 @@ export const Table = ({
     const [_isActionLoading, _setIsActionLoading] = useState(false);
 
     const [_previewItem, _setPreviewItem] = useState(null);
+
+    const [_page, _setPage] = useState(page);
 
     const Modal = modalType === 'expandable' ? ExpandableModal : PopupModal;
 
@@ -263,12 +270,15 @@ export const Table = ({
     const handleRowSave = async (row) => {
         try {
             let response = null
-            // console.log('Row save:', row);
+            // console.log('Row save row:', row);
 
             _setIsActionLoading(true);
             const func = _newItem ? onAddNew : onRowChange;
+            const d = cloneDeep(row);
+            // console.log('Row save d:', d);
 
-            response = await func(row);
+
+            response = await func(d);
 
 
             if (!response || !response.success) {
@@ -374,6 +384,12 @@ export const Table = ({
         return v;
     }
 
+    const handlePageChange = (key, val) => {
+        let newPage = { ..._page };
+        newPage[key] = val;
+        _setPage(newPage);
+        onPageChange(newPage);
+    };
 
     // search, sort, data change
     useEffect(() => {
@@ -459,10 +475,10 @@ export const Table = ({
     return (
         <div className={`cs-table ${className} `}>
             {/* header */}
-            <div className='w-full h-8 flex justify-end items-center mb-4'>
+            <div className='w-full h-11 flex justify-end items-start mb-1'>
 
-                {/* filters */}
-                <div className='flex flex-1  items-center'>
+                {/* new and filters */}
+                <div className='h-12 flex flex-1  items-center'>
                     {
                         allowAddNew && editable && <button
                             className='btn btn-secondary flex items-center'
@@ -488,19 +504,44 @@ export const Table = ({
                 </div>
 
 
+
                 {/* search */}
-                <div className='flex justify-end'>
+                <div className='flex flex-shrink-0 gap-5 justify-end'>
+                    {/* items per page */}
+                    {paginated &&
+                        <div className=''>
+                            {/* <span className='text-[14px] text-gray-500'>Items per page </span> */}
+                            <select
+                                className={cn(
+                                    paginated ? 'block' : 'hidden',
+                                    'w-full h-8 rounded-md border border-gray-300'
+                                )}
+                                value={_page.itemsPerPage}
+                                onChange={(e) => {
+                                    const newItemsPerPage = parseInt(e.target.value, 10);
+                                    handlePageChange('itemsPerPage', newItemsPerPage);
+                                }}
+                            >
+                                {itemsPerPageOptions.map(option => (
+                                    <option key={option} value={option}>{option} per page</option>
+                                ))}
+                            </select>
+                        </div>
+                    }
                     {
                         searchable && (
-                            <div className='relative form-control w-60 flex items-center gap-2 '>
-                                <Search className='size-4 text-gray-300' />
-                                <input
-                                    type='text'
-                                    placeholder='Search...'
-                                    className='focus:ring-0 focus:outline-none h-4'
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
+                            <div>
+                                {/* <span className='text-[14px] text-gray-500'>Search </span> */}
+                                <div className='w-60 h-8 relative form-control flex items-center gap-2 '>
+                                    <Search className='size-4 text-gray-300' />
+                                    <input
+                                        type='text'
+                                        placeholder='Search...'
+                                        className='focus:ring-0 focus:outline-none '
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
                             </div>
                         )
                     }
@@ -907,6 +948,9 @@ export const Table = ({
             {/* <div>
                 {JSON.stringify(users)}
             </div> */}
+            <div className='w-full' >
+
+            </div>
         </div>
     )
 }

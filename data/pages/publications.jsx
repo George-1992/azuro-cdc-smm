@@ -59,6 +59,13 @@ export default function Publications({ pathname, user, account, session, org }) 
     const [isLoading, setIsLoading] = useState(false);
     const [_data, _setData] = useState([]);
 
+    const [_page, _setPage] = useState({
+        skip: 0,
+        take: 10,
+        itemsPerPage: 10,
+        total: 0
+    });
+
     // Define options for the dropdowns
     const statusOptions = [
         { value: 'draft', label: 'Draft' },
@@ -181,39 +188,52 @@ export default function Publications({ pathname, user, account, session, org }) 
     };
 
     // initial load, fetch data
-    useEffect(() => {
-        const body = async () => {
-            try {
-                setIsLoading(true);
-                const response = await saGetItems({
-                    collection: collectionName,
-                    query: {
-                        where: {
-                            org_id: org ? org.id : null
-                        },
-                        orderBy: {
-                            created_at: 'desc'
-                        }
-                    }
-                });
-
-                console.log(`Fetched ${collectionName}: `, response);
-
-                if (response && response.success) {
-                    _setData(response.data || []);
-                } else {
-                    notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
+    const fetchItems = async () => {
+        try {
+            setIsLoading(true);
+            const response = await saGetItems({
+                collection: collectionName,
+                includeCount: true,
+                query: {
+                    where: {
+                        org_id: org ? org.id : null
+                    },
+                    include: {
+                        medias: true
+                    },
+                    orderBy: {
+                        created_at: 'desc'
+                    },
+                    // take: 10
                 }
+            });
 
-            } catch (error) {
-                console.error(`Error fetching ${collectionName}: `, error);
-            } finally {
-                setIsLoading(false);
+            console.log(`Fetched ${collectionName}: `, response);
+            console.log(`Total count: `, response.count);
+
+            if (response && response.success) {
+                _setData(response.data || []);
+                _setPage(prev => ({
+                    ...prev,
+                    total: response.count || response.data.length || 0
+                }));
+            } else {
+                notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
             }
-        };
-        body();
-    }, [org]);
 
+        } catch (error) {
+            console.error(`Error fetching ${collectionName}: `, error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    useEffect(() => {
+        fetchItems();
+    }, []);
+
+    const handlePageChange = (newPage) => {
+        _setPage(newPage);
+    }
 
 
     return (
@@ -225,19 +245,22 @@ export default function Publications({ pathname, user, account, session, org }) 
 
             <div className="w-full relative rounded-md overflow-x-auto">
                 <Table
-                    className="card-1 min-w-full"
+                    className="card-1 min-w-full max-h-calc(100vh-300px)"
                     editable={true}
                     editableInline={false}
                     allowAddNew={true}
                     actions={['edit', 'delete', 'preview']}
                     tableExcludeKeys={['org_id']}
                     previewKey="content"
+                    page={_page}
+                    onPageChange={handlePageChange}
                     editRenderOrder={[
                         ['name', 'status'],
                         ['title'],
                         ['scheduled_at'],
                         ['description'],
                         ['notes'],
+                        ['medias'],
                     ]}
                     columns={[
                         {
@@ -280,6 +303,75 @@ export default function Publications({ pathname, user, account, session, org }) 
                             width: 'w-64',
                             type: 'textarea',
                             placeholder: 'Enter description...',
+                        },
+                        {
+                            key: 'medias',
+                            title: 'Medias',
+                            width: 'w-96',
+                            required: false,
+                            multiple: true,
+                            Component: (props) => {
+                                return (
+                                    <div>{props?.value?.length || 0}</div>
+                                )
+                            },
+                            EditComponent: (props) => {
+                                const row = props.row || {};
+                                // console.log('EditComponent: ', props);
+                                return (
+                                    <div>{props?.value?.length || 0}</div>
+                                )
+                                return (
+                                    <div className="w-full">
+                                        <div className="flex flex-col gap-3">
+                                            <InlineMediaLibrary
+                                                org={org}
+                                                types={['pdf']}
+                                                onChange={(media) => {
+                                                    // console.log('EditComponent imd: ', media);
+                                                    if (props.onChange) {
+                                                        const newMedias = props.row.medias || [];
+                                                        if (!newMedias.find(m => m.id === media.id)) {
+                                                            newMedias.push(media);
+                                                        }
+
+                                                        // console.log('newMedias: ', newMedias);
+
+                                                        props.onChange({
+                                                            target: {
+                                                                name: 'medias',
+                                                                value: newMedias
+                                                            }
+                                                        });
+                                                    }
+                                                }}
+                                            />
+
+                                            <div>
+                                                <MediaLibrary
+                                                    org={org}
+                                                    size='md'
+                                                    allowUpload={false}
+                                                    allowEdit={false}
+                                                    standAloneMode={true}
+                                                    medias={row.medias}
+                                                    onChange={(updatedMedias) => {
+                                                        // console.log('MediaLibrary updatedMedias: ', updatedMedias);
+                                                        if (props.onChange) {
+                                                            props.onChange({
+                                                                target: {
+                                                                    name: 'medias',
+                                                                    value: updatedMedias
+                                                                }
+                                                            });
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            }
                         },
                         {
                             key: 'script',

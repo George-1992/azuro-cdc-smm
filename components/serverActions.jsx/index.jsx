@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import Prisma from '@/services/prisma';
 import sendEmail from '@/services/emailing';
 import { processEmailBody } from '@/utils/other';
+import { cloneDeep } from 'lodash';
 
 
 
@@ -54,12 +55,14 @@ export const saGetItem = async ({
 export const saGetItems = async ({
     collection = '',
     query = null,
+    includeCount = false,
 }) => {
     // console.log('saGetItem called with collection: ', collection, ' id: ', id, ' fields: ', fields);
     let resObj = {
         success: false,
         message: 'Collection and ID are required',
-        data: null
+        data: null,
+        count: null
     }
 
     try {
@@ -69,7 +72,17 @@ export const saGetItems = async ({
         //     return resObj;
         // }
 
-        const data = await Prisma[collection].findMany(_query);
+        let data, count;
+
+        if (includeCount) {
+            // Run both queries in parallel
+            [data, count] = await Promise.all([
+                Prisma[collection].findMany(_query),
+                Prisma[collection].count({ where: _query.where || {} })
+            ]);
+        } else {
+            data = await Prisma[collection].findMany(_query);
+        }
 
         if (!data) {
             resObj.message = 'Items not found';
@@ -85,6 +98,9 @@ export const saGetItems = async ({
         resObj.success = true;
         resObj.message = 'Successfully fetched';
         resObj.data = data;
+        if (includeCount) {
+            resObj.count = count;
+        }
         return resObj;
 
     } catch (error) {
@@ -92,7 +108,8 @@ export const saGetItems = async ({
         return {
             success: false,
             message: error.message || 'An error occurred',
-            data: null
+            data: null,
+            count: null
         }
     } finally {
         // Prisma.$disconnect();
@@ -255,6 +272,12 @@ export const saCreateItem = async ({
             data.password = hashedPassword;
         }
 
+        // if one-shot then make sure to send isFastMode to webhook only
+        const isFastMode = data.isFastMode;
+        if (typeof data.isFastMode !== 'undefined') {
+            delete data.isFastMode;
+        }
+
         // if data id or email exists on data check
         // if data is already exists return error
         if (data.id || data.email) {
@@ -285,7 +308,11 @@ export const saCreateItem = async ({
         resObj.data = createdItem;
 
         if (resObj.success) {
-            handleN8nWebhook({ action: 'create', collection, data: createdItem });
+            let sd = cloneDeep(createdItem);
+            if (typeof isFastMode !== 'undefined') {
+                sd.isFastMode = isFastMode;
+            }
+            handleN8nWebhook({ action: 'create', collection, data: sd });
         }
 
         return resObj;
@@ -510,7 +537,7 @@ export const saSendEmail = async ({
 
 export const handleN8nWebhook = async ({ action, collection, data }) => {
     try {
-        console.log('handleN8nWebhook collection: ', collection);
+        // console.log('handleN8nWebhook collection: ', collection);
 
         if (!collection || !data) {
             console.error('Collection and data are required for webhook handling');
@@ -523,17 +550,19 @@ export const handleN8nWebhook = async ({ action, collection, data }) => {
 
 
         let webhook = null;
-        let toSendData = data;
-        const settings = await Prisma.organizations.findUnique({
+        let toSendData = cloneDeep(data);
+        const orgData = await Prisma.organizations.findUnique({
             where: { id: data.org_id },
         });
-        if (settings && settings.webhook) {
-            webhook = settings.webhook;
+        if (orgData && orgData.webhook) {
+            webhook = orgData.webhook;
         }
         if (!webhook) {
             console.error('No webhook configured');
             return;
         }
+
+
 
         // if its publications or contents, fetch from db including sources and avatar
         if (['publications', 'contents'].includes(collection)) {
@@ -551,6 +580,7 @@ export const handleN8nWebhook = async ({ action, collection, data }) => {
                             medias: true,
                         }
                     },
+                    sources: true,
                 }
             }
             if (collection === 'avatars') {
@@ -558,19 +588,51 @@ export const handleN8nWebhook = async ({ action, collection, data }) => {
                     medias: true,
                 }
             }
-
             toSendData = await Prisma[collection].findUnique(d);
+        }
+        // console.log('handleN8nWebhook data.isFastMode: ', data.isFastMode);
+
+        if (typeof data.isFastMode !== 'undefined') {
+            toSendData.isFastMode = data.isFastMode;
         }
 
 
 
         toSendData.config = toSendData.config || {};
-        toSendData.config.requestDomain = process.env.DOMAIN || null;
+        const requestDomain = process.env.DOMAIN || null;
+        const mediaDomain = process.env.NEXT_PUBLIC_MEDIA_DOMAIN || null;
 
-        console.log('handleN8nWebhook toSendData: ', toSendData);
         if (webhook) {
+            const adjustMediaUrl = (medias) => {
+                let newMedias = medias.map(media => {
+                    {
+                        return {
+                            ...media,
+                            url: `${mediaDomain || ''}/${media.url || ''}`
+                        }
+                    };
+                });
+                return newMedias;
+            }
+            // update toSendData's media array's each entery to have full url
+            toSendData.requestDomain = requestDomain;
+            if (toSendData.medias && Array.isArray(toSendData.medias)) {
+                toSendData.medias = adjustMediaUrl(toSendData.medias);
+            }
+            if (toSendData.avatar && toSendData.avatar.medias && Array.isArray(toSendData.avatar.medias)) {
+                toSendData.avatar.medias = adjustMediaUrl(toSendData.avatar.medias);
+            }
+            if (toSendData.sources && toSendData.sources && Array.isArray(toSendData.sources)) {
+                toSendData.sources.forEach((source) => {
+                    if (source.medias && Array.isArray(source.medias)) {
+                        source.medias = adjustMediaUrl(source.medias);
+                    }
+                });
+            }
+
+            // console.log('handleN8nWebhook toSendData: ', toSendData);
             const url = webhook;
-            const result = await fetch(url, {
+            const options = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -578,8 +640,11 @@ export const handleN8nWebhook = async ({ action, collection, data }) => {
                 body: JSON.stringify({
                     collection: collection,
                     data: toSendData,
+                    context: orgData && orgData?.configs ? orgData?.configs : {}
                 })
-            });
+            }
+
+            const result = await fetch(url, options);
             // console.log('result: ', result);
         }
 

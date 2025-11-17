@@ -31,19 +31,18 @@ export default function Avatars({ pathname, user, account, session, org }) {
             data: null,
         }
         try {
-            console.log('item: ', item);
-
+            // console.log('handleNewItem item: ', item);
             // add account_id to item if you have account-based filtering
             // item.account_id = account ? account.id : null;
+
             let toSaveData = cloneDeep(item);
-            toSaveData.medias = {};
+            const od = cloneDeep(item)
             toSaveData.org_id = orgId;
             toSaveData = adjustRelationalData({
                 data: toSaveData,
                 collection: collectionName,
-                originalData: _dataOriginal
+                originalData: {}
             });
-            console.log('toSaveData: ', toSaveData);
 
 
             const response = await saCreateItem({
@@ -88,9 +87,12 @@ export default function Avatars({ pathname, user, account, session, org }) {
                 data: toSaveData,
                 originalData: _dataOriginal.find(d => d.id === item.id)
             });
+            // console.log('handleNewItem toSaveData: ', toSaveData);
+            // return resObj
+
             // console.log('handleUpdateItem item: ', item);
             // console.log('handleUpdateItem _dataOriginal: ', _dataOriginal.find(d => d.id === item.id));
-            console.log('handleUpdateItem toSaveData: ', toSaveData);
+            // console.log('handleUpdateItem toSaveData: ', toSaveData);
             // return resObj
 
             const response = await saUpdateItem({
@@ -162,8 +164,6 @@ export default function Avatars({ pathname, user, account, session, org }) {
             return resObj;
         }
     };
-
-
 
 
     const handleMediaChange = (itemId, updatedMedias) => {
@@ -267,7 +267,7 @@ export default function Avatars({ pathname, user, account, session, org }) {
                             width: 'w-48',
                             required: true,
                             validateKey: 'length',
-                            type: 'select',
+                            // type: 'select',
                             options: avatarTones,
                         },
                         {

@@ -1,25 +1,36 @@
 export const adjustRelationalData = ({ collection, data, originalData }) => {
+
     if (!data) {
         return data;
     }
     let _data = { ...data };
     try {
+        // console.log('data: ', data);
+
 
         if (_data) {
+            ['created_at', 'updated_at'].forEach(relKey => {
+                if (_data[relKey]) {
+                    delete _data[relKey];
+                }
+            });
+
             // delete relation ids if not defined
             ['avatar_id'].forEach(relKey => {
-                console.log('relKey: ', typeof _data?.[relKey]);
+                console.log('relKey: ', relKey, typeof _data?.[relKey]);
                 if (_data && typeof _data?.[relKey] !== 'undefined' && !_data[relKey]) {
                     delete _data[relKey];
                 }
             });
 
-            ['avatar'].forEach(relKey => {
 
+            ['avatar', 'org'].forEach(relKey => {
                 if (typeof _data[relKey] !== 'undefined') {
+                    console.log('relKey: ', relKey);
                     delete _data[relKey];
                 }
             });
+            // return _data;
 
             // delete relational data that should not be directly updated
             ['sources', 'medias'].forEach(relKey => {
@@ -28,8 +39,10 @@ export const adjustRelationalData = ({ collection, data, originalData }) => {
                         connect: [],
                         disconnect: [],
                     }
-                    const originalItems = originalData ? originalData[relKey] : [];
-                    // console.log('originalData: ', originalData);
+                    const originalItems = originalData
+                        ? originalData[relKey] || []
+                        : [];
+                    // console.log('originalItems: ', originalItems);
                     // console.log('newItems: ', _data[relKey]);
 
                     if (originalItems) {
@@ -63,7 +76,7 @@ export const adjustRelationalData = ({ collection, data, originalData }) => {
         }
 
 
-        console.log('_data: ', _data);
+        // console.log('_data: ', _data);
 
         return _data;
 

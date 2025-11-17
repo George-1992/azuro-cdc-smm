@@ -1,9 +1,14 @@
 'use server';
 
+import { downloadFiles } from "@/services/downloadFiles";
 import Prisma from "@/services/prisma";
+import { uploadS3 } from "@/services/s3";
+import { getFileTypeFromUrl } from "@/utils/other";
 import { nanoid } from "nanoid";
 
 const { NextResponse } = require("next/server");
+
+const mediaPrefix = process.env.NEXT_PUBLIC_MEDIA_PREFIX || '';
 
 export const handleApiRequest = async (req, res) => {
     let resObj = {
@@ -178,22 +183,22 @@ export const handleApiPostRequest = async (req, res) => {
 
 
         // update source
-        for (const sData of reqData) {
-
-            let existingSource = null;
+        for (const _data of reqData) {
+            // console.log('sData: ', sData);
+            let sData = { ..._data }; // clone to avoid mutating original data
+            let existingItem = null;
             // check if source exists
             if (sData.id) {
                 let rd = { where: { id: sData.id } };
-                existingSource = await Prisma[collection].findUnique(rd);
+                existingItem = await Prisma[collection].findUnique(rd);
             }
-            // console.log('existingSource: ', existingSource);
+            // console.log('existingItem: ', existingItem);
             // console.log('collection: ', collection);
-            // console.log('existingSource: ', existingSource);
+            // console.log('existingItem: ', existingItem);
 
-            if (!existingSource) {
+            if (!existingItem) {
                 if (collection === 'ideas') {
                     // if its for ideas, create new
-
                     // make sure org_id is provided
                     if (!sData.org_id) {
                         resObj.message = `org_id is required to create new ${collection}`;
@@ -213,11 +218,66 @@ export const handleApiPostRequest = async (req, res) => {
                 }
 
             } else {
+
+                // have medias, array of objects with url
+                if (sData.medias && Array.isArray(sData.medias)) {
+                    // console.log('sData: ', sData);
+                    let newMedias = null
+                    for (let i = 0; i < sData.medias.length; i++) {
+                        const url = sData.medias[i].url;
+                        const binaary = await downloadFiles(url);
+
+                        const form = new FormData();
+                        const fileName = `${mediaPrefix}/${existingItem?.org_id}/${nanoid()}-${url.split('/').pop()}`;
+                        const s3key = fileName;
+                        const type = getFileTypeFromUrl(url) || 'application/octet-stream';
+                        form.append('file', new Blob([binaary]), fileName);
+
+                        const s3Res = await uploadS3({
+                            form: form,
+                            key: s3key,
+                        })
+                        if (!s3Res.success) {
+                            resObj.message = `Error uploading media file: ${s3Res.message}`;
+                            return NextResponse.json(resObj);
+                        }
+                        // console.log('type: ', type);
+
+
+                        // create media
+                        const mediaRes = await Prisma.medias.create({
+                            data: {
+                                org_id: existingItem?.org_id,
+                                url: s3key,
+                                key: s3key,
+                                type: type,
+                            }
+                        });
+
+                        // console.log('mediaRes: ', mediaRes);
+
+
+                        newMedias = newMedias || {};
+                        newMedias.connect = newMedias.connect || [];
+                        newMedias.connect.push({ id: mediaRes.id });
+
+
+                    }
+
+                    // delete old medias key
+                    // and add new once with connect construction
+                    delete sData.medias;
+                    if (newMedias) {
+                        sData.medias = newMedias;
+                    }
+                }
+
                 // update existing
                 await Prisma[collection].update({
                     where: { id: sData.id },
                     data: sData,
                 });
+
                 resObj.success = true;
                 resObj.message = 'Data updated successfully';
             }

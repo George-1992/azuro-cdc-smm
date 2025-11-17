@@ -12,7 +12,7 @@ import { deleteS3Objects } from "@/services/s3";
 import { getFileTypeFromUrl } from "@/utils/other";
 import { CircleCheckIcon, CircleIcon, CircleXIcon, ImageIcon, XIcon } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 
 
 const mediaDomain = process.env.NEXT_PUBLIC_MEDIA_DOMAIN || '';
@@ -32,6 +32,34 @@ export default function MediaLibrary({
     types = null,
     onChange = () => { },
 }) {
+
+    let _acceptedFileTypes = acceptedFileTypes;
+    if (!_acceptedFileTypes && types && types.length) {
+        _acceptedFileTypes = [];
+        if (types.includes('image')) {
+            _acceptedFileTypes = _acceptedFileTypes.concat(['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif']);
+        }
+        if (types.includes('video')) {
+            _acceptedFileTypes = _acceptedFileTypes.concat(['video/mp4', 'video/webm', 'video/ogg']);
+        }
+        if (types.includes('pdf')) {
+            _acceptedFileTypes = _acceptedFileTypes.concat(['application/pdf']);
+        }
+        if (types.includes('audio')) {
+            _acceptedFileTypes = _acceptedFileTypes.concat(['audio/mpeg', 'audio/wav', 'audio/ogg']);
+        }
+        if (types.includes('document')) {
+            _acceptedFileTypes = _acceptedFileTypes.concat([
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-powerpoint',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+            ]);
+        }
+    }
+    // console.log('_acceptedFileTypes: ', _acceptedFileTypes);
 
     const orgId = org ? org.id : null;
     const thisPrefix = `smm-app/${orgId || 'no-org'}`;
@@ -201,6 +229,12 @@ export default function MediaLibrary({
         }
     }, [org?.id]);
 
+    useEffect(() => {
+        if (standAloneMode) {
+            _setMedias(medias || []);
+        }
+    }, [medias.length]);
+
 
     // console.log('MediaLibrary org: ', org);
     // console.log('MediaLibrary : ', allowEdit, _isEditMode);
@@ -210,7 +244,7 @@ export default function MediaLibrary({
 
             {allowUpload &&
                 <Uploader
-                    acceptedFileTypes={acceptedFileTypes}
+                    acceptedFileTypes={_acceptedFileTypes}
                     options={{
                         keyPrefix: thisPrefix
                     }}
@@ -323,9 +357,25 @@ export default function MediaLibrary({
                                                     height={100}
                                                 />
                                             }
+                                            {media.type === 'video' &&
+                                                <video
+                                                    src={url}
+                                                    width={_size === 'sm' ? 48 : _size === 'md' ? 160 : 250}
+                                                    controls
+                                                />
+                                            }
 
+
+                                            {size === 'full' &&
+                                                <div className="absolute -bottom-1 -right-1">
+                                                    <span className="opacity-40 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
+                                                        {media.url.split('/').pop()}
+                                                    </span>
+                                                </div>
+                                            }
 
                                             <div className="absolute -top-1 -right-1">
+
                                                 {
                                                     standAloneMode && <button
                                                         type="button"
@@ -373,6 +423,7 @@ export const InlineMediaLibrary = ({
     collection = '',
     org = null,
     types = null,
+    acceptedFileTypes = null,
     onChange = () => { },
 }) => {
 
@@ -427,6 +478,7 @@ export const InlineMediaLibrary = ({
                                 org={org}
                                 size={'md'}
                                 types={types}
+                                acceptedFileTypes={acceptedFileTypes}
                                 allowEdit={false}
                                 collection={collection}
                                 allowSingleSelect={true}
