@@ -18,6 +18,9 @@ import { use, useEffect, useState } from "react";
 const mediaDomain = process.env.NEXT_PUBLIC_MEDIA_DOMAIN || '';
 const allSizes = ['sm', 'md', 'full'];
 
+console.log('mediaDomain: ', mediaDomain);
+
+
 export default function MediaLibrary({
     medias = [],
     allowEdit = false,
