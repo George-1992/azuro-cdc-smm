@@ -135,7 +135,7 @@ export const saUpdateItem = async ({
             resObj.message = 'Collection is required';
             return resObj;
         }
-        
+
         // Prisma update supports include in the query
         const data = await Prisma[collection].update(query);
 
@@ -274,11 +274,6 @@ export const saCreateItem = async ({
             data.password = hashedPassword;
         }
 
-        // if one-shot then make sure to send isFastMode to webhook only
-        const isFastMode = data.isFastMode;
-        if (typeof data.isFastMode !== 'undefined') {
-            delete data.isFastMode;
-        }
 
         // if data id or email exists on data check
         // if data is already exists return error
@@ -310,11 +305,7 @@ export const saCreateItem = async ({
         resObj.data = createdItem;
 
         if (resObj.success) {
-            let sd = cloneDeep(createdItem);
-            if (typeof isFastMode !== 'undefined') {
-                sd.isFastMode = isFastMode;
-            }
-            handleN8nWebhook({ action: 'create', collection, data: sd });
+            handleN8nWebhook({ action: 'create', collection, data: createdItem });
         }
 
         return resObj;
@@ -502,41 +493,11 @@ export const saSendEmail = async ({
 
 
 
-// export const saCreatePublication = async ({ data, org }) => {
-//     let resObj = {
-//         success: false,
-//         warning: false,
-//         message: '',
-//         data: null,
-//     }
-//     try {
-
-//         let toSaveData = { ...data }
-//         toSaveData.org_id = org.id;
-
-//         // create publication
-//         const createdPublication = await Prisma.publications.create({
-//             data: toSaveData
-//         });
-//         // console.log('createdPublication: ',createdPublication);
-
-//         resObj.success = true;
-//         resObj.message = 'Publication created successfully';
-//         resObj.data = createdPublication;
-//         return resObj;
-//     } catch (error) {
-//         console.error(error);
-//         resObj.message = error.message || 'An error occurred';
-//         resObj.warning = true;
-//     }
-// }
-
 
 
 
 // n8n webhook handlers
-
-
+// ===================================================================
 export const handleN8nWebhook = async ({ action, collection, data }) => {
     try {
         // console.log('handleN8nWebhook collection: ', collection);

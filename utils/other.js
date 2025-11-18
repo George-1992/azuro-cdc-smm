@@ -216,3 +216,15 @@ export const getFileTypeFromUrl = (url) => {
         return 'unknown';
     }
 }
+
+
+export const cleanFileName = (fileName) => {
+    try {
+        // clean white spaces and special characters except dot, dash, underscore
+        if (!fileName || typeof fileName !== 'string') return fileName;
+        return fileName.trim().replace(/[^\w.\-]/g, '_');
+    } catch (error) {
+        console.log('cleanFileName error ==> ', error);
+        return fileName;
+    }
+}

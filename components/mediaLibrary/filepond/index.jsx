@@ -4,6 +4,7 @@ import { FilePond, registerPlugin } from 'react-filepond';
 import 'filepond/dist/filepond.min.css';
 import { uploadS3 } from '@/services/s3';
 import { useEffect, useState } from 'react';
+import { cleanFileName } from '@/utils/other';
 
 
 export default function Uploader({
@@ -62,8 +63,9 @@ export default function Uploader({
                                 }
 
                                 const formData = new FormData();
-                                formData.append('file', file, file.name);
-                                const key = `${keyPrefix}/${file.name}`;
+                                const fileName = cleanFileName(file.name);
+                                formData.append('file', file, fileName);
+                                const key = `${keyPrefix}/${fileName}`;
 
                                 const uRes = await uploadS3({
                                     form: formData,
@@ -71,7 +73,7 @@ export default function Uploader({
                                 });
 
                                 if (uRes.success) {
-                                    handleUploadSuccess({ name: file.name, url: key });
+                                    handleUploadSuccess({ name: fileName, url: key });
                                     load(key); // Only on success
                                 } else {
                                     // error(uRes.message || 'Upload failed');
