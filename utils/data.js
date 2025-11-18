@@ -42,8 +42,8 @@ export const adjustRelationalData = ({ collection, data, originalData }) => {
                     const originalItems = originalData
                         ? originalData[relKey] || []
                         : [];
-                    // console.log('originalItems: ', originalItems);
-                    // console.log('newItems: ', _data[relKey]);
+                    console.log('originalItems: ', originalItems);
+                    console.log('newItems: ', _data[relKey]);
 
                     if (originalItems) {
                         const newItems = _data[relKey];

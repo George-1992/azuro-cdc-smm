@@ -325,6 +325,7 @@ export default function MediaLibrary({
                             {
                                 _medias.map((media) => {
                                     const url = `${mediaDomain}/${media.url}`;
+
                                     return (
                                         <MediaContainer
                                             key={media.id}
@@ -471,25 +472,36 @@ export const InlineMediaLibrary = ({
                     </div>
                 </div>
                 {_isOpen &&
-                    <div>
-                        <PopupModal
-                            isOpen={_isOpen}
-                            onClose={() => { _setIsOpen(false) }}
-                            size="lg"
-                        >
-                            <MediaLibrary
-                                org={org}
-                                size={'md'}
-                                types={types}
-                                acceptedFileTypes={acceptedFileTypes}
-                                allowEdit={false}
-                                collection={collection}
-                                allowSingleSelect={true}
-                                onChange={handleOnChange}
-                            />
-                        </PopupModal>
-                    </div>
+                    <PopupModal
+                        isOpen={_isOpen}
+                        onClose={() => { _setIsOpen(false) }}
+                        size="lg"
+                        className="max-w-[550px] max-h-[600px] overflow-y-auto"
+                    >
+                        <MediaLibrary
+                            org={org}
+                            size={'md'}
+                            types={types}
+                            acceptedFileTypes={acceptedFileTypes}
+                            allowEdit={false}
+                            collection={collection}
+                            allowSingleSelect={true}
+                            onChange={handleOnChange}
+                        />
+                    </PopupModal>
                 }
+                {/* <div className="absolute top-0 left-0 bg-red-300">
+                    <MediaLibrary
+                        org={org}
+                        size={'md'}
+                        types={types}
+                        acceptedFileTypes={acceptedFileTypes}
+                        allowEdit={false}
+                        collection={collection}
+                        allowSingleSelect={true}
+                        onChange={handleOnChange}
+                    />
+                </div> */}
             </div>
         </div>
     )

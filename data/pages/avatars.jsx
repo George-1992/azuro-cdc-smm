@@ -11,7 +11,7 @@ import MediaLibrary, { InlineMediaLibrary, MediaUploader } from "@/components/me
 import Uploader from "@/components/mediaLibrary/filepond";
 import { getFileTypeFromUrl } from "@/utils/other";
 import { adjustRelationalData } from "@/utils/data";
-import { cloneDeep } from "lodash";
+import _, { cloneDeep } from "lodash";
 
 export default function Avatars({ pathname, user, account, session, org }) {
 
@@ -21,6 +21,12 @@ export default function Avatars({ pathname, user, account, session, org }) {
     const [_data, _setData] = useState([]);
     const [_dataOriginal, _setDataOriginal] = useState([]);
 
+    const [_page, _setPage] = useState({
+        skip: 0,
+        take: 10,
+        itemsPerPage: 10,
+        total: 0
+    });
 
 
 
@@ -165,61 +171,50 @@ export default function Avatars({ pathname, user, account, session, org }) {
         }
     };
 
-
-    const handleMediaChange = (itemId, updatedMedias) => {
-        try {
-            const newData = [..._data];
-            newData.forEach((d, i) => {
-                if (d.id === itemId) {
-                    newData[i].medias = updatedMedias;
-                }
-            });
-            console.log('newData ', newData);
-            _setData(newData);
-
-        } catch (error) {
-            console.error('Error handling media change: ', error);
-        }
+    const handlePageChange = (newPage) => {
+        _setPage(newPage);
+        fetchItems(newPage);
     }
 
+    const fetchItems = async (thisPage = _page) => {
+        try {
+            setIsLoading(true);
+            const response = await saGetItems({
+                collection: collectionName,
+                query: {
+                    where: {
+                        // account_id: account ? account.id : null,
+                        org_id: org ? org.id : null
+                    },
+                    orderBy: {
+                        created_at: 'desc'
+                    },
+                    include: {
+                        medias: true
+                    },
+                    skip: thisPage.skip,
+                    take: thisPage.take,
+                }
+            });
 
+            console.log(`Fetched ${collectionName}: `, response);
+
+            if (response && response.success) {
+                _setData(response.data || []);
+                _setDataOriginal(cloneDeep(response.data) || []);
+            } else {
+                notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
+            }
+
+        } catch (error) {
+            console.error(`Error fetching ${collectionName}: `, error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
     // initial load, fetch data
     useEffect(() => {
-        const body = async () => {
-            try {
-                setIsLoading(true);
-                const response = await saGetItems({
-                    collection: collectionName,
-                    query: {
-                        where: {
-                            // account_id: account ? account.id : null,
-                            org_id: org ? org.id : null
-                        },
-                        orderBy: {
-                            created_at: 'desc'
-                        },
-                        include: {
-                            medias: true
-                        }
-                    }
-                });
-
-                console.log(`Fetched ${collectionName}: `, response);
-
-                if (response && response.success) {
-                    _setData(response.data || []);
-                    _setDataOriginal(cloneDeep(response.data) || []);
-                } else {
-                    notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
-                }
-
-            } catch (error) {
-                console.error(`Error fetching ${collectionName}: `, error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        body();
+        fetchItems();
     }, []);
 
     // console.log('_data: ', _data);
@@ -239,6 +234,8 @@ export default function Avatars({ pathname, user, account, session, org }) {
                     editable={true}
                     editableInline={false}
                     allowAddNew={true}
+                    page={_page}
+                    onPageChange={handlePageChange}
                     actions={['edit', 'delete']}
                     tableExcludeKeys={[
                         'idea_inspiration', 'text',

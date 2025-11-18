@@ -8,6 +8,9 @@ import { toDisplayStr } from "@/utils/other";
 import { Calendar, CheckCircle, Clock, Edit3, FileText, Pause, Play, XCircle, BookOpen } from "lucide-react";
 import DateDisplay from "@/components/date/DateDisplay";
 import Image from "next/image";
+import MediaLibrary, { InlineMediaLibrary } from "@/components/mediaLibrary";
+import { adjustRelationalData } from "@/utils/data";
+import { cloneDeep } from "lodash";
 
 // Status Component with Icons
 const StatusItem = ({ value, row, rowIndex, column }) => {
@@ -55,9 +58,11 @@ const StatusItem = ({ value, row, rowIndex, column }) => {
 
 export default function Publications({ pathname, user, account, session, org }) {
 
+    const orgId = org ? org.id : null;
     const collectionName = 'publications';
     const [isLoading, setIsLoading] = useState(false);
     const [_data, _setData] = useState([]);
+    const [_dataOriginal, _setDataOriginal] = useState([]);
 
     const [_page, _setPage] = useState({
         skip: 0,
@@ -118,15 +123,30 @@ export default function Publications({ pathname, user, account, session, org }) 
             data: null,
         }
         try {
+
+            let toSaveData = cloneDeep(item);
+            toSaveData.org_id = orgId;
+            toSaveData = adjustRelationalData({
+                collection: collectionName,
+                data: toSaveData,
+                originalData: _dataOriginal.find(d => d.id === toSaveData.id)
+            });
+            // console.log('toSaveData: ', toSaveData);
+
             const response = await saUpdateItem({
                 collection: collectionName,
                 query: {
-                    where: { id: item.id },
-                    data: item
+                    where: {
+                        id: toSaveData.id
+                    },
+                    data: toSaveData,
+                    include: {
+                        medias: true
+                    },
                 }
             });
-
             console.log(`Response from updating ${collectionName}: `, response);
+ 
 
             if (response && response.success) {
                 _setData(prev => prev.map(i => i.id === item.id ? response.data : i));
@@ -188,7 +208,7 @@ export default function Publications({ pathname, user, account, session, org }) 
     };
 
     // initial load, fetch data
-    const fetchItems = async () => {
+    const fetchItems = async (thisPage = _page) => {
         try {
             setIsLoading(true);
             const response = await saGetItems({
@@ -204,19 +224,24 @@ export default function Publications({ pathname, user, account, session, org }) 
                     orderBy: {
                         created_at: 'desc'
                     },
-                    // take: 10
+                    skip: thisPage.skip || 0,
+                    take: thisPage.take,
                 }
             });
 
             console.log(`Fetched ${collectionName}: `, response);
-            console.log(`Total count: `, response.count);
+            // console.log(`Total count: `, response.count);
 
             if (response && response.success) {
                 _setData(response.data || []);
-                _setPage(prev => ({
-                    ...prev,
-                    total: response.count || response.data.length || 0
-                }));
+                _setDataOriginal(cloneDeep(response.data || []));
+                // if total not set yet
+                if (!_page.total) {
+                    _setPage(prev => ({
+                        ...prev,
+                        total: response.count || response.data.length || 0
+                    }));
+                }
             } else {
                 notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
             }
@@ -233,6 +258,7 @@ export default function Publications({ pathname, user, account, session, org }) 
 
     const handlePageChange = (newPage) => {
         _setPage(newPage);
+        fetchItems(newPage);
     }
 
 
@@ -252,6 +278,7 @@ export default function Publications({ pathname, user, account, session, org }) 
                     actions={['edit', 'delete', 'preview']}
                     tableExcludeKeys={['org_id']}
                     previewKey="content"
+                    // modalType="expandable"
                     page={_page}
                     onPageChange={handlePageChange}
                     editRenderOrder={[
@@ -318,15 +345,15 @@ export default function Publications({ pathname, user, account, session, org }) 
                             EditComponent: (props) => {
                                 const row = props.row || {};
                                 // console.log('EditComponent: ', props);
-                                return (
-                                    <div>{props?.value?.length || 0}</div>
-                                )
+                                // return (
+                                //     <div>{props?.value?.length || 0}</div>
+                                // )
                                 return (
                                     <div className="w-full">
                                         <div className="flex flex-col gap-3">
                                             <InlineMediaLibrary
                                                 org={org}
-                                                types={['pdf']}
+                                                types={['image', 'video']}
                                                 onChange={(media) => {
                                                     // console.log('EditComponent imd: ', media);
                                                     if (props.onChange) {

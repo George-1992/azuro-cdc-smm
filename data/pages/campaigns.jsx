@@ -36,6 +36,14 @@ export default function Campaigns({ pathname, user, account, session, org }) {
     const [_sources, _setSources] = useState([]);
     const [_weekTemplates, _setWeekTemplates] = useState([]);
 
+    const [_page, _setPage] = useState({
+        skip: 0,
+        take: 10,
+        itemsPerPage: 10,
+        total: 0
+    });
+
+
     // Define options for the dropdowns
     const statusOptions = [
         // { value: 'draft', label: 'Draft' },
@@ -261,49 +269,55 @@ export default function Campaigns({ pathname, user, account, session, org }) {
             console.error('Error fetching related data: ', error);
         }
     };
+    const fetchItems = async (thisPage = _page) => {
+        try {
+            setIsLoading(true);
+
+            // Fetch campaigns
+            const response = await saGetItems({
+                collection: collectionName,
+                query: {
+                    where: {
+                        org_id: org ? org.id : null
+                    },
+                    orderBy: {
+                        created_at: 'desc'
+                    },
+                    include: {
+                        sources: true,
+                        avatar: true
+                    },
+                    skip: thisPage.skip,
+                    take: thisPage.take
+                }
+            });
+
+            console.log(`Fetched ${collectionName}: `, response);
+
+            if (response && response.success) {
+                _setData(response.data || []);
+            } else {
+                notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
+            }
+
+            // Fetch related data
+            await fetchRelatedData();
+
+        } catch (error) {
+            console.error(`Error fetching ${collectionName}: `, error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    const handlePageChange = (newPage) => {
+        _setPage(newPage);
+        fetchItems(newPage);
+    };
 
     // initial load, fetch data
     useEffect(() => {
-        const body = async () => {
-            try {
-                setIsLoading(true);
-
-                // Fetch campaigns
-                const response = await saGetItems({
-                    collection: collectionName,
-                    query: {
-                        where: {
-                            org_id: org ? org.id : null
-                        },
-                        orderBy: {
-                            created_at: 'desc'
-                        },
-                        include: {
-                            sources: true,
-                            avatar: true
-                        }
-                    }
-                });
-
-                console.log(`Fetched ${collectionName}: `, response);
-
-                if (response && response.success) {
-                    _setData(response.data || []);
-                } else {
-                    notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
-                }
-
-                // Fetch related data
-                await fetchRelatedData();
-
-            } catch (error) {
-                console.error(`Error fetching ${collectionName}: `, error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        body();
-    }, [org]);
+        fetchItems();
+    }, [org?.id]);
 
     // Create options for select fields
     const avatarOptions = _avatars.map(avatar => ({
@@ -338,6 +352,8 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                     editableInline={false}
                     allowAddNew={true}
                     modalType="expandable"
+                    page={_page}
+                    onPageChange={handlePageChange}
                     actions={['edit', 'delete']}
                     tableExcludeKeys={['org_id', 'sources', 'agenda']}
                     editRenderOrder={[

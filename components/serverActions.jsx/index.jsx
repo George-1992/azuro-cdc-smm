@@ -120,7 +120,7 @@ export const saUpdateItem = async ({
     query = null,
 }) => {
 
-    // console.log('saUpdateItem called with collection: ', collection, ' and data: ', data);
+    // console.log('saUpdateItem called with collection: ', collection, ' query: ', query);
     let resObj = {
         success: false,
         message: 'Collection is required',
@@ -135,6 +135,8 @@ export const saUpdateItem = async ({
             resObj.message = 'Collection is required';
             return resObj;
         }
+        
+        // Prisma update supports include in the query
         const data = await Prisma[collection].update(query);
 
         if (!data) {

@@ -18,6 +18,12 @@ export default function Sources({ pathname, user, account, session, org }) {
     const [isLoading, setIsLoading] = useState(true);
     const [_data, _setData] = useState([]);
     const [isNewItem, setIsNewItem] = useState(false);
+    const [_page, _setPage] = useState({
+        skip: 0,
+        take: 10,
+        itemsPerPage: 10,
+        total: 0
+    });
 
     const handleNewItem = async (item) => {
         let resObj = {
@@ -135,41 +141,45 @@ export default function Sources({ pathname, user, account, session, org }) {
             return resObj;
         }
     };
+    const handlePageChange = (newPage) => {
+        _setPage(newPage);
+        fetchItems(newPage);
+    }
 
+    const fetchItems = async (thisPage = _page) => {
+        try {
+            setIsLoading(true);
+            const response = await saGetItems({
+                collection: collectionName,
+                query: {
+                    where: {
+                        // account_id: account ? account.id : null,
+                        org_id: org ? org.id : null
+                    },
+                    orderBy: {
+                        created_at: 'desc'
+                    }
+                }
+            });
+
+            console.log(`Fetched ${collectionName}: `, response);
+
+            if (response && response.success) {
+                _setData(response.data || []);
+            } else {
+                notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
+            }
+
+        } catch (error) {
+            console.error(`Error fetching ${collectionName}: `, error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // initial load, fetch data
     useEffect(() => {
-        const body = async () => {
-            try {
-                setIsLoading(true);
-                const response = await saGetItems({
-                    collection: collectionName,
-                    query: {
-                        where: {
-                            // account_id: account ? account.id : null,
-                            org_id: org ? org.id : null
-                        },
-                        orderBy: {
-                            created_at: 'desc'
-                        }
-                    }
-                });
-
-                console.log(`Fetched ${collectionName}: `, response);
-
-                if (response && response.success) {
-                    _setData(response.data || []);
-                } else {
-                    notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
-                }
-
-            } catch (error) {
-                console.error(`Error fetching ${collectionName}: `, error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        body();
+        fetchItems();
     }, []);
 
 
@@ -196,6 +206,8 @@ export default function Sources({ pathname, user, account, session, org }) {
                     newItemChange={(item) => {
                         setIsNewItem(item ? true : false);
                     }}
+                    page={_page}
+                    onPageChange={handlePageChange}
                     onChange={(newData) => {
                         console.log('Sources data changed: ', newData);
                     }}

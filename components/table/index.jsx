@@ -369,7 +369,6 @@ export const Table = ({
             return 'errored';
         }
     };
-
     const getPlcHolder = (col) => {
         let v = '';
         if (!v) {
@@ -382,14 +381,32 @@ export const Table = ({
             }
         }
         return v;
-    }
+    };
 
     const handlePageChange = (key, val) => {
         let newPage = { ..._page };
         newPage[key] = val;
+
+        if (key === 'itemsPerPage') {
+            newPage.skip = 0;
+            newPage.take = val;
+        }
         _setPage(newPage);
         onPageChange(newPage);
     };
+    const getPaginationInfo = (thisPage = _page) => {
+        // calculate number of pages
+        const totalPages = Math.ceil(thisPage.total / thisPage.itemsPerPage) || 1;
+
+        const result = {
+            total: totalPages,
+        }
+        // console.log('getPaginationInfo thisPage: ', thisPage);
+        // console.log('getPaginationInfo result: ', result);
+        return result;
+    };
+
+
 
     // search, sort, data change
     useEffect(() => {
@@ -467,6 +484,15 @@ export const Table = ({
         }
     }, [columns]);
 
+    // update page if page prop changes
+    useEffect(() => {
+        if (page.total != _page.total) {
+            let newPage = { ..._page };
+            newPage.total = page.total;
+            _setPage(newPage);
+        }
+    }, [page.total]);
+
     // console.log('Table _editingItem: ', _editingItem);
     // // console.log('Table _editingCell: ', _editingCell);
     // console.log('Table _newItem: ', _newItem);
@@ -505,16 +531,17 @@ export const Table = ({
 
 
 
-                {/* search */}
+                {/* select, search */}
                 <div className='flex flex-shrink-0 gap-5 justify-end'>
                     {/* items per page */}
-                    {paginated &&
+                    {paginated && _page.total > 10 &&
                         <div className=''>
                             {/* <span className='text-[14px] text-gray-500'>Items per page </span> */}
                             <select
+                                name='itemsPerPage'
                                 className={cn(
                                     paginated ? 'block' : 'hidden',
-                                    'w-full h-8 rounded-md border border-gray-300'
+                                    'w-full h-8 rounded-md border border-gray-300 focus:outline-none'
                                 )}
                                 value={_page.itemsPerPage}
                                 onChange={(e) => {
@@ -945,11 +972,120 @@ export const Table = ({
                 )
             }
 
-            {/* <div>
-                {JSON.stringify(users)}
-            </div> */}
-            <div className='w-full' >
 
+
+            {/* pagination */}
+            <div className='w-full my-2 flex items-center justify-end gap-1' >
+                {paginated && getPaginationInfo().total > 1 && (() => {
+                    const totalPages = getPaginationInfo().total;
+                    const currentPage = (_page.skip / _page.itemsPerPage) + 1;
+                    const pages = [];
+
+                    // Previous button
+                    pages.push(
+                        <button
+                            key="prev"
+                            onClick={() => handlePageChange('skip', Math.max(0, _page.skip - _page.itemsPerPage))}
+                            disabled={currentPage === 1}
+                            className={cn(
+                                'px-2 py-0.5 rounded-md border border-gray-300',
+                                currentPage === 1
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                            )}
+                        >
+                            <ChevronLeft className="w-4 " />
+                        </button>
+                    );
+
+                    // Always show first page
+                    pages.push(
+                        <button
+                            key={1}
+                            onClick={() => handlePageChange('skip', 0)}
+                            className={cn(
+                                'px-2 py-0.5 rounded-md border border-gray-300',
+                                currentPage === 1
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                            )}
+                        >
+                            1
+                        </button>
+                    );
+
+                    // Show dots if current page is far from start
+                    if (currentPage > 3) {
+                        pages.push(
+                            <span key="dots-start" className="px-2 text-gray-500">...</span>
+                        );
+                    }
+
+                    // Show pages around current page
+                    const startPage = Math.max(2, currentPage - 1);
+                    const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+                    for (let i = startPage; i <= endPage; i++) {
+                        pages.push(
+                            <button
+                                key={i}
+                                onClick={() => handlePageChange('skip', (i - 1) * _page.itemsPerPage)}
+                                className={cn(
+                                    'px-2 py-0.5 rounded-md border border-gray-300',
+                                    currentPage === i
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                                )}
+                            >
+                                {i}
+                            </button>
+                        );
+                    }
+
+                    // Show dots if current page is far from end
+                    if (currentPage < totalPages - 2) {
+                        pages.push(
+                            <span key="dots-end" className="px-2 text-gray-500">...</span>
+                        );
+                    }
+
+                    // Always show last page (if more than 1 page)
+                    if (totalPages > 1) {
+                        pages.push(
+                            <button
+                                key={totalPages}
+                                onClick={() => handlePageChange('skip', (totalPages - 1) * _page.itemsPerPage)}
+                                className={cn(
+                                    'px-2 py-0.5 rounded-md border border-gray-300',
+                                    currentPage === totalPages
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                                )}
+                            >
+                                {totalPages}
+                            </button>
+                        );
+                    }
+
+                    // Next button
+                    pages.push(
+                        <button
+                            key="next"
+                            onClick={() => handlePageChange('skip', Math.min((totalPages - 1) * _page.itemsPerPage, _page.skip + _page.itemsPerPage))}
+                            disabled={currentPage === totalPages}
+                            className={cn(
+                                'px-1 py-0.5 rounded-md border border-gray-300',
+                                currentPage === totalPages
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                            )}
+                        >
+                            <ChevronRight className="w-4 " />
+                        </button>
+                    );
+
+                    return pages;
+                })()}
             </div>
         </div>
     )
