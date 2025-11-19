@@ -30,6 +30,7 @@ export default function Avatars({ pathname, user, account, session, org }) {
 
 
 
+
     const handleNewItem = async (item) => {
         let resObj = {
             success: false,
@@ -58,7 +59,13 @@ export default function Avatars({ pathname, user, account, session, org }) {
 
             console.log(`Response from adding new ${collectionName}: `, response);
             if (response && response.success) {
-                _setData(prev => [...prev, response.data]);
+                let newData = [..._data];
+                let newDataItem = response.data;
+                if (item.medias && item.medias.length > 0) {
+                    newDataItem.medias = item.medias;
+                }
+                newData.unshift(newDataItem);
+                _setData(newData);
                 // notify({ type: 'success', message: 'Sources created successfully' });
                 resObj.success = true;
                 resObj.data = response.data;
@@ -181,6 +188,7 @@ export default function Avatars({ pathname, user, account, session, org }) {
             setIsLoading(true);
             const response = await saGetItems({
                 collection: collectionName,
+                includeCount: true,
                 query: {
                     where: {
                         // account_id: account ? account.id : null,
@@ -202,6 +210,13 @@ export default function Avatars({ pathname, user, account, session, org }) {
             if (response && response.success) {
                 _setData(response.data || []);
                 _setDataOriginal(cloneDeep(response.data) || []);
+                // if total not set yet
+                if (!_page.total) {
+                    _setPage(prev => ({
+                        ...prev,
+                        total: response.count || response.data.length || 0
+                    }));
+                }
             } else {
                 notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
             }
@@ -219,6 +234,7 @@ export default function Avatars({ pathname, user, account, session, org }) {
 
     // console.log('_data: ', _data);
     // console.log('Avatars org: ', org);
+    // console.log('_page: ', _page);
 
 
     return (
@@ -304,13 +320,20 @@ export default function Avatars({ pathname, user, account, session, org }) {
                                             <InlineMediaLibrary
                                                 org={org}
                                                 types={['image']}
-                                                onChange={(media) => {
-                                                    // console.log('EditComponent imd: ', media);
+                                                onChange={(medias) => {
+                                                    // console.log('InlineMediaLibrary props.row: ', props.row);
+                                                    // console.log('InlineMediaLibrary medias: ', medias);
                                                     if (props.onChange) {
-                                                        const newMedias = props.row.medias || [];
-                                                        if (!newMedias.find(m => m.id === media.id)) {
-                                                            newMedias.push(media);
-                                                        }
+
+                                                        const currentMedias = props.row.medias || [];
+                                                        const newMedias = [...currentMedias];
+                                                        const mediasArr = Array.isArray(medias) ? medias : [medias];
+                                                        mediasArr.forEach(media => {
+                                                            if (!newMedias.find(m => m.id === media.id)) {
+                                                                newMedias.push(media);
+                                                            }
+                                                        });
+
                                                         props.onChange({
                                                             target: {
                                                                 name: 'medias',

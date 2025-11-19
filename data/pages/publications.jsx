@@ -87,16 +87,31 @@ export default function Publications({ pathname, user, account, session, org }) 
             data: null,
         }
         try {
-            item.org_id = org ? org.id : null;
+
+            let toSaveData = cloneDeep(item);
+            const od = cloneDeep(item)
+            toSaveData.org_id = orgId;
+            toSaveData = adjustRelationalData({
+                data: toSaveData,
+                collection: collectionName,
+                originalData: {}
+            });
 
             const response = await saCreateItem({
                 collection: collectionName,
-                data: item
+                data: toSaveData
             });
 
             console.log(`Response from adding new ${collectionName}: `, response);
             if (response && response.success) {
-                _setData(prev => [...prev, response.data]);
+                let newData = [..._data];
+                let newDataItem = response.data;
+                if (item.medias && item.medias.length > 0) {
+                    newDataItem.medias = item.medias;
+                }
+                newData.unshift(newDataItem);
+                _setData(newData);
+
                 resObj.success = true;
                 resObj.data = response.data;
                 resObj.message = 'Publication created successfully';
@@ -146,7 +161,7 @@ export default function Publications({ pathname, user, account, session, org }) 
                 }
             });
             console.log(`Response from updating ${collectionName}: `, response);
- 
+
 
             if (response && response.success) {
                 _setData(prev => prev.map(i => i.id === item.id ? response.data : i));
@@ -284,7 +299,7 @@ export default function Publications({ pathname, user, account, session, org }) 
                     editRenderOrder={[
                         ['name', 'status'],
                         ['title'],
-                        ['scheduled_at'],
+                        // ['scheduled_at'],
                         ['description'],
                         ['notes'],
                         ['medias'],
@@ -309,14 +324,14 @@ export default function Publications({ pathname, user, account, session, org }) 
                             defaultValue: 'inReview',
                             Component: StatusItem
                         },
-                        {
-                            key: 'scheduled_at',
-                            title: 'Scheduled',
-                            width: 'w-40',
-                            type: 'datetime',
-                            placeholder: 'Select date & time',
-                            Component: ({ value }) => value ? <DateDisplay date={value} format="short" showTime={true} /> : <span className="text-gray-400">Not scheduled</span>
-                        },
+                        // {
+                        //     key: 'scheduled_at',
+                        //     title: 'Scheduled',
+                        //     width: 'w-40',
+                        //     type: 'datetime',
+                        //     placeholder: 'Select date & time',
+                        //     Component: ({ value }) => value ? <DateDisplay date={value} format="short" showTime={true} /> : <span className="text-gray-400">Not scheduled</span>
+                        // },
                         {
                             key: 'title',
                             title: 'Title',

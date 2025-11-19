@@ -239,7 +239,8 @@ export default function MediaLibrary({
     }, [medias.length]);
 
 
-    // console.log('MediaLibrary org: ', org);
+    // console.log('MediaLibrary medias: ', medias);
+    // console.log('MediaLibrary _medias: ', _medias);
     // console.log('MediaLibrary : ', allowEdit, _isEditMode);
 
     return (
@@ -325,10 +326,12 @@ export default function MediaLibrary({
                             {
                                 _medias.map((media) => {
                                     const url = `${mediaDomain}/${media.url}`;
+                                    // console.log('media: ', media);
+
 
                                     return (
                                         <MediaContainer
-                                            key={media.id}
+                                            key={`media-item-${media.id}`}
                                             type={allowSingleSelect ? 'button' : undefined}
                                             onClick={(e) => {
                                                 if (allowSingleSelect) {
@@ -383,6 +386,7 @@ export default function MediaLibrary({
                                                 {
                                                     standAloneMode && <button
                                                         type="button"
+                                                        className="bg-white rounded-full"
                                                         onClick={() => {
                                                             handleRemoveMedia(media.id);
                                                         }}
@@ -439,7 +443,7 @@ export const InlineMediaLibrary = ({
     };
 
     return (
-        <div className="w-full">
+        <div className="w-96">
             <div className="w-full flex flex-col gap-3">
                 <div className="flex justify-between">
                     <div>
@@ -476,7 +480,8 @@ export const InlineMediaLibrary = ({
                         isOpen={_isOpen}
                         onClose={() => { _setIsOpen(false) }}
                         size="lg"
-                        className="max-w-[550px] max-h-[600px] overflow-y-auto"
+                        className="w-[560px] h-[580px]"
+                        backdropClassName={'pt-2 md:pt-3'}
                     >
                         <MediaLibrary
                             org={org}

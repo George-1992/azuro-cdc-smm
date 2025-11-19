@@ -13,7 +13,7 @@ import MediaLibrary, { InlineMediaLibrary } from "@/components/mediaLibrary";
 export default function Sources({ pathname, user, account, session, org }) {
 
 
-
+    const orgId = org ? org.id : null;
     const collectionName = 'sources';
     const [isLoading, setIsLoading] = useState(true);
     const [_data, _setData] = useState([]);
@@ -33,17 +33,29 @@ export default function Sources({ pathname, user, account, session, org }) {
         }
         try {
             // add account_id to item if you have account-based filtering
-            // item.account_id = account ? account.id : null;
-            item.org_id = org ? org.id : null;
+            let toSaveData = cloneDeep(item);
+            const od = cloneDeep(item)
+            toSaveData.org_id = orgId;
+            toSaveData = adjustRelationalData({
+                data: toSaveData,
+                collection: collectionName,
+                originalData: {}
+            });
 
             const response = await saCreateItem({
                 collection: collectionName,
-                data: item
+                data: toSaveData
             });
 
             // console.log(`Response from adding new ${collectionName}: `, response);
             if (response && response.success) {
-                _setData(prev => [...prev, response.data]);
+                let newData = [..._data];
+                let newDataItem = response.data;
+                if (item.medias && item.medias.length > 0) {
+                    newDataItem.medias = item.medias;
+                }
+                newData.unshift(newDataItem);
+                _setData(newData);
                 // notify({ type: 'success', message: 'Sources created successfully' });
                 resObj.success = true;
                 resObj.data = response.data;
@@ -151,6 +163,7 @@ export default function Sources({ pathname, user, account, session, org }) {
             setIsLoading(true);
             const response = await saGetItems({
                 collection: collectionName,
+                includeCount: true,
                 query: {
                     where: {
                         // account_id: account ? account.id : null,
@@ -166,6 +179,12 @@ export default function Sources({ pathname, user, account, session, org }) {
 
             if (response && response.success) {
                 _setData(response.data || []);
+                if (!_page.total) {
+                    _setPage(prev => ({
+                        ...prev,
+                        total: response.count || response.data.length || 0
+                    }));
+                }
             } else {
                 notify({ type: 'error', message: response.message || `Failed to fetch ${collectionName}` });
             }

@@ -607,7 +607,10 @@ export const handleN8nWebhook = async ({ action, collection, data }) => {
                 })
             }
 
-            const result = await fetch(url, options);
+            if (!IS_DEV) {
+                const result = await fetch(url, options);
+            }
+
             // console.log('result: ', result);
         }
 
