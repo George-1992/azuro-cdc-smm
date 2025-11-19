@@ -134,7 +134,7 @@ export default function Sources({ pathname, user, account, session, org }) {
 
             if (response && response.success) {
                 _setData(prev => prev.filter(i => i.id !== item.id));
-                // notify({ type: 'success', message: 'Sources deleted successfully' });
+                notify({ type: 'success', message: 'Sources deleted successfully' });
                 resObj.success = true;
                 resObj.message = 'Done';
             } else {
@@ -230,7 +230,21 @@ export default function Sources({ pathname, user, account, session, org }) {
                     onChange={(newData) => {
                         console.log('Sources data changed: ', newData);
                     }}
-                    actions={['edit', 'delete']}
+                    actions={[
+                        {
+                            name: 'edit',
+                        },
+                        {
+                            name: 'delete',
+                            confirm: {
+                                title: 'Confirm Deletion',
+                                message: 'Are you sure you want to delete this publication?',
+                                button1: 'Cancel',
+                                button2: 'Delete',
+                            },
+                            func: handleDeleteItem
+                        }
+                    ]}
                     tableExcludeKeys={[
                         'idea_inspiration', 'raw_text',
                         'internal_note', 'config', 'medias'

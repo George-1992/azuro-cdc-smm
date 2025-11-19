@@ -32,20 +32,23 @@ const StatusItem = ({ value, row, rowIndex, column }) => {
     };
 
     const getStatusColor = (status) => {
-        switch (status) {
-            case 'planned':
-                return 'text-gray-600 bg-gray-100';
-            case 'scheduled':
-                return 'text-blue-600 bg-blue-100';
-            case 'published':
-                return 'text-green-600 bg-green-100';
-            case 'draft':
-                return 'text-yellow-600 bg-yellow-100';
-            case 'cancelled':
-                return 'text-red-600 bg-red-100';
-            default:
-                return 'text-gray-600 bg-gray-100';
+
+        if (['draft', 'planned'].includes(status)) {
+            return 'text-yellow-600 bg-yellow-100';
         }
+        else if (['publishing'].includes(status)) {
+            return 'text-green-600 bg-yellow-100';
+        }
+        else if (['cancelled'].includes(status)) {
+            return 'text-red-600 bg-red-100';
+        }
+        else if (['scheduled'].includes(status)) {
+            return 'text-blue-600 bg-blue-100';
+        }
+        else if (['published'].includes(status)) {
+            return 'text-green-600 bg-green-100';
+        }
+
     };
 
     return (
@@ -205,6 +208,7 @@ export default function Publications({ pathname, user, account, session, org }) 
                 _setData(prev => prev.filter(i => i.id !== item.id));
                 resObj.success = true;
                 resObj.message = 'Publication deleted successfully';
+                notify({ type: 'success', message: 'Content deleted successfully' });
             } else {
                 notify({ type: 'error', message: response.message || 'Failed to delete publication' });
                 resObj.message = response.message || 'Failed to delete publication';
@@ -216,6 +220,57 @@ export default function Publications({ pathname, user, account, session, org }) 
             console.error(`Error deleting ${collectionName}: `, error);
             notify({ type: 'error', message: `Failed to delete ${collectionName}` });
             resObj.message = error.message || `Failed to delete ${collectionName}`;
+            resObj.data = item;
+            resObj.success = false;
+            return resObj;
+        }
+    };
+    const handlePublishItem = async (item) => {
+        let resObj = {
+            success: false,
+            message: 'Unknown error',
+            data: null,
+        }
+        try {
+
+
+            const response = await saUpdateItem({
+                collection: collectionName,
+                query: {
+                    where: {
+                        id: item.id
+                    },
+                    data: {
+                        status: 'publishing'
+                    },
+                }
+            });
+
+
+            if (response && response.success) {
+                let newData = [..._data];
+                newData.forEach(d => {
+                    if (d.id === item.id) {
+                        d.status = 'publishing';
+                    }
+                });
+                _setData(newData);
+                notify({ type: 'success', message: `${collectionName} updated successfully` });
+                resObj.success = true;
+                resObj.data = response.data;
+                resObj.message = 'Done';
+            } else {
+                notify({ type: 'error', message: response.message || `Failed to update ${collectionName}` });
+                resObj.message = response.message || `Failed to update ${collectionName}`;
+                resObj.success = false;
+            }
+
+            return resObj;
+
+        } catch (error) {
+            console.error('Error updating publication: ', error);
+            notify({ type: 'error', message: 'Failed to update publication' });
+            resObj.message = error.message || 'Failed to update publication';
             resObj.data = item;
             resObj.success = false;
             return resObj;
@@ -290,7 +345,7 @@ export default function Publications({ pathname, user, account, session, org }) 
                     editable={true}
                     editableInline={false}
                     allowAddNew={true}
-                    actions={['edit', 'delete', 'preview']}
+
                     tableExcludeKeys={['org_id']}
                     previewKey="content"
                     // modalType="expandable"
@@ -303,6 +358,31 @@ export default function Publications({ pathname, user, account, session, org }) 
                         ['description'],
                         ['notes'],
                         ['medias'],
+                    ]}
+                    actions={[
+                        {
+                            name: 'edit',
+                        },
+                        {
+                            name: 'delete',
+                            confirm: {
+                                title: 'Confirm Deletion',
+                                message: 'Are you sure you want to delete this publication?',
+                                button1: 'Cancel',
+                                button2: 'Delete',
+                            },
+                            func: handleDeleteItem
+                        },
+                        {
+                            name: 'publish',
+                            confirm: {
+                                title: 'Confirm Publication',
+                                message: 'Are you sure you want to publish this content?',
+                                button1: 'Cancel',
+                                button2: 'Publish',
+                            },
+                            func: handlePublishItem
+                        }
                     ]}
                     columns={[
                         {
@@ -321,7 +401,7 @@ export default function Publications({ pathname, user, account, session, org }) 
                             type: 'select',
                             options: statusOptions,
                             required: true,
-                            defaultValue: 'inReview',
+                            defaultValue: 'draft',
                             Component: StatusItem
                         },
                         // {

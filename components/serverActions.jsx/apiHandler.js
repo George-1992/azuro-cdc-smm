@@ -68,8 +68,7 @@ export const handleApiRequest = async (req, res) => {
         resObj.message = error.message || 'An error occurred';
         resObj.warning = true;
     }
-}
-
+};
 export const verifyApiKey = async (HEADERS) => {
     try {
         return true; // Temporarily disable API key verification
@@ -90,9 +89,7 @@ export const verifyApiKey = async (HEADERS) => {
         console.error(error);
         return false;
     }
-}
-
-
+};
 export const handleApiGetRequest = async (req, res) => {
     let resObj = {
         success: false,
@@ -110,6 +107,7 @@ export const handleApiGetRequest = async (req, res) => {
             return NextResponse.json(resObj);
         }
         const collection = queryParams.get('collection');
+        const limit = queryParams.get('limit') ? parseInt(queryParams.get('limit')) : 100;
         if (!collection) {
             resObj.message = 'Collection is required';
             return NextResponse.json(resObj);
@@ -142,6 +140,15 @@ export const handleApiGetRequest = async (req, res) => {
                 where: { org_id: orgId },
             });
             resObj.success = true;
+        } else if (collection === 'ideas') {
+            resObj.data = await Prisma.ideas.findMany({
+                where: { org_id: orgId },
+                include: {
+                    medias: true,
+                },
+                take: limit,
+            });
+            resObj.success = true;
         }
 
 
@@ -153,7 +160,7 @@ export const handleApiGetRequest = async (req, res) => {
         resObj.success = false;
         return NextResponse.json(resObj);
     }
-}
+};
 
 export const handleApiPostRequest = async (req, res) => {
     let resObj = {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, ChevronUp, ChevronDown, Edit2, Check, X, ChevronLeft, ChevronRight, CircleX, Pencil, Trash, PlusIcon, ArrowBigRight, Eye } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Edit2, Check, X, ChevronLeft, ChevronRight, CircleX, Pencil, Trash, PlusIcon, ArrowBigRight, Eye, ArrowUpToLineIcon } from 'lucide-react';
 import { PopupModal, ExpandableModal } from '@/components/other/modals';
 import FormBuilder from '@/components/formBuilder';
 import { notify } from '@/components/sonnar/sonnar';
@@ -40,7 +40,7 @@ export const Table = ({
     editable = false,
     editableInline = false,
     nonEditables = ['id', 'createdAt'],
-    actions = [], // ['edit', 'delete', 'preview'] 
+    actions = [], // ['edit', 'delete', 'preview'] or array of { name: 'custom', Icon: CustomIcon, onClick: func } 
     allowAddNew = false,
     isUserTable = false, // special for users table
     editRenderOrder = [],
@@ -107,6 +107,8 @@ export const Table = ({
     // edit item popup
     const [_editingItemMain, _setEditingItemMain] = useState(null);
     const [_deletingItem, _setDeletingItem] = useState(null);
+    // confirm items
+    const [_confirmingItem, _setConfirmingItem] = useState(null);
 
     const [_newItem, _setNewItem] = useState(null);
 
@@ -217,6 +219,10 @@ export const Table = ({
         // console.log('Delete action clicked for row:', row);
         _setDeletingItem(row);
     };
+    const handleActionPublish = (row) => {
+
+    };
+
     const handleAddNew = () => {
         const emptyRow = {};
         _columns.forEach(col => {
@@ -629,38 +635,43 @@ export const Table = ({
                                                 {!isModified && actions && actions.length > 0 &&
                                                     actions.map((action, aIdx) => {
                                                         const otherProps = {};
-                                                        let Icon = Pencil;
-                                                        if (action === 'edit') Icon = Edit2;
-                                                        if (action === 'delete') Icon = Trash;
-                                                        if (action === 'view') Icon = ArrowBigRight;
-                                                        if (action === 'preview') Icon = Eye;
-                                                        if (action === 'custom' && action.Icon) Icon = action.Icon;
+                                                        let actionObj = typeof action === 'string' ? {
+                                                            name: action,
+                                                            Icon: Pencil,
+                                                            func: () => { },
+                                                        } : action;
 
-                                                        const func = action === 'edit'
-                                                            ? handleActionEdit
-                                                            : action === 'delete'
-                                                                ? handleActionDelete
-                                                                : action === 'preview'
-                                                                    ? handleActionPreview
-                                                                    : () => { };
+                                                        let Icon = actionObj.Icon || Pencil;
+                                                        let Comp = 'button';
+                                                        if (actionObj.name === 'edit') Icon = Edit2;
+                                                        if (actionObj.name === 'delete') Icon = Trash;
+                                                        if (actionObj.name === 'preview') Icon = Eye;
+                                                        if (actionObj.name === 'publish') Icon = ArrowUpToLineIcon;
 
-                                                        let Comp = null;
-                                                        if (action === 'view' && linkPrefix && row.id) {
-                                                            otherProps.href = `${linkPrefix || pathname}/${row.id}`;
-
-                                                            Comp = Link;
-                                                        } else {
-                                                            Comp = 'button';
+                                                        if (actionObj.name === 'edit') {
+                                                            actionObj.func = handleActionEdit;
                                                         }
 
                                                         return (
                                                             <Comp
                                                                 key={aIdx}
-                                                                onClick={() => func(row)}
-                                                                className='p-1.5 bg-gray-200 border border-gray-100 rounded-md hover:bg-gray-300 transition-colors '
+                                                                onClick={() => {
+                                                                    if (actionObj.confirm) {
+                                                                        _setConfirmingItem({
+                                                                            ...actionObj,
+                                                                            data: row,
+                                                                        });
+                                                                    } else {
+                                                                        actionObj.func(row);
+                                                                    }
+                                                                }}
+                                                                className='p-1.5 bg-gray-200 border border-gray-100 rounded-md hover:bg-gray-300 transition-colors relative group'
                                                                 {...otherProps}
                                                             >
-                                                                <Icon className={`size-4 ${action === 'delete' ? 'text-red-500' : 'text-gray-500'}`} />
+                                                                <Icon className={`size-4 ${actionObj.name === 'delete' ? 'text-red-500' : 'text-gray-500'}`} />
+                                                                <span className='absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50'>
+                                                                    {actionObj.name.charAt(0).toUpperCase() + actionObj.name.slice(1)}
+                                                                </span>
                                                             </Comp>
                                                         )
                                                     })
@@ -693,6 +704,7 @@ export const Table = ({
                                         </td>
                                     }
 
+                                    {/* body cells */}
                                     {_columns.map((column) => {
 
 
@@ -884,29 +896,40 @@ export const Table = ({
                 )
             }
             {
-                _deletingItem && (
+                _confirmingItem && (
                     <Modal
                         isOpen={true}
-                        onClose={() => _setDeletingItem(null)}
+                        onClose={() => _setConfirmingItem(null)}
                     >
                         <div className='p-4'>
-                            <h2 className='text-lg font-semibold mb-2'>Confirm Deletion</h2>
-                            <p>Are you sure you want to delete this item?</p>
+                            <h2 className='text-lg font-semibold mb-2'>
+                                {_confirmingItem?.confirm.title || 'Confirm'}
+                            </h2>
+                            <p>{_confirmingItem?.confirm.message || 'Are you sure you want to delete this item?'}</p>
                         </div>
                         <div className='flex justify-end p-4'>
                             <button
-                                className='btn btn-danger'
+                                className='btn btn-primary '
                                 onClick={() => {
-                                    handleRowDelete(_deletingItem);
+                                    // handleRowDelete(_deletingItem);
+                                    _setConfirmingItem(null)
                                 }}
                             >
-                                Delete
+                                {_confirmingItem?.confirm.button1 || 'Cancel'}
                             </button>
                             <button
-                                className='btn btn-secondary ml-2'
-                                onClick={() => _setDeletingItem(null)}
+                                className={cn(
+                                    'btn ml-2',
+                                    _confirmingItem.name.includes('delete') ? 'btn-danger' : 'btn-secondary '
+                                )}
+                                onClick={() => {
+                                    if (_confirmingItem.func) {
+                                        _confirmingItem.func(_confirmingItem.data);
+                                        _setConfirmingItem(null);
+                                    }
+                                }}
                             >
-                                Cancel
+                                {_confirmingItem?.confirm.button2 || 'Confirm'}
                             </button>
                         </div>
                         {_isActionLoading && <div className='animate-shimmer'></div>}
@@ -988,7 +1011,7 @@ export const Table = ({
                             onClick={() => handlePageChange('skip', Math.max(0, _page.skip - _page.itemsPerPage))}
                             disabled={currentPage === 1}
                             className={cn(
-                                'px-2 py-0.5 rounded-md border border-gray-300',
+                                'px-1.5 py-0.5 rounded-md border border-gray-300',
                                 currentPage === 1
                                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                     : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -1074,7 +1097,7 @@ export const Table = ({
                             onClick={() => handlePageChange('skip', Math.min((totalPages - 1) * _page.itemsPerPage, _page.skip + _page.itemsPerPage))}
                             disabled={currentPage === totalPages}
                             className={cn(
-                                'px-1 py-0.5 rounded-md border border-gray-300',
+                                'px-1.5 py-0.5 rounded-md border border-gray-300',
                                 currentPage === totalPages
                                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                     : 'bg-white text-gray-700 hover:bg-gray-100'

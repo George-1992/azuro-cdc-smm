@@ -101,7 +101,10 @@ export default function Campaigns({ pathname, user, account, session, org }) {
         try {
             let toSaveData = { ...item };
             toSaveData.org_id = org ? org.id : null;
-            toSaveData = adjustRelationalData({ collection: collectionName, data: toSaveData });
+            toSaveData = adjustRelationalData({
+                collection: collectionName,
+                data: toSaveData
+            });
             let lda = localDataCheck('create', toSaveData);
             if (!lda.success) {
                 resObj = lda;
@@ -224,6 +227,7 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                 _setData(prev => prev.filter(i => i.id !== item.id));
                 resObj.success = true;
                 resObj.message = 'Campaign deleted successfully';
+                notify({ type: 'success', message: 'Campaign deleted successfully' });
             } else {
                 notify({ type: 'error', message: response.message || 'Failed to delete campaign' });
                 resObj.message = response.message || 'Failed to delete campaign';
@@ -354,7 +358,21 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                     modalType="expandable"
                     page={_page}
                     onPageChange={handlePageChange}
-                    actions={['edit', 'delete']}
+                    actions={[
+                        {
+                            name: 'edit',
+                        },
+                        {
+                            name: 'delete',
+                            confirm: {
+                                title: 'Confirm Deletion',
+                                message: 'Are you sure you want to delete this publication?',
+                                button1: 'Cancel',
+                                button2: 'Delete',
+                            },
+                            func: handleDeleteItem
+                        }
+                    ]}
                     tableExcludeKeys={['org_id', 'sources', 'agenda']}
                     editRenderOrder={[
                         ['name'],
