@@ -9,6 +9,8 @@ import StatusItem from "@/components/other/statusItem";
 import SourceTypeItem, { getTypeFromUrl } from "@/components/other/sourceTypeItem";
 import Uploader from "@/components/mediaLibrary/filepond";
 import MediaLibrary, { InlineMediaLibrary } from "@/components/mediaLibrary";
+import { cloneDeep } from "lodash";
+import { adjustRelationalData } from "@/utils/data";
 
 export default function Sources({ pathname, user, account, session, org }) {
 
@@ -56,7 +58,7 @@ export default function Sources({ pathname, user, account, session, org }) {
                 }
                 newData.unshift(newDataItem);
                 _setData(newData);
-                // notify({ type: 'success', message: 'Sources created successfully' });
+                notify({ type: 'success', message: 'Sources created successfully' });
                 resObj.success = true;
                 resObj.data = response.data;
                 resObj.message = 'Done';
