@@ -6,6 +6,7 @@ import sendEmail from '@/services/emailing';
 import { processEmailBody } from '@/utils/other';
 import { cloneDeep } from 'lodash';
 
+const IS_DEV = process.env.NODE_ENV === 'development';
 
 
 export const saGetItem = async ({
@@ -555,10 +556,6 @@ export const handleN8nWebhook = async ({ action, collection, data }) => {
         }
         // console.log('handleN8nWebhook data.isFastMode: ', data.isFastMode);
 
-        if (typeof data.isFastMode !== 'undefined') {
-            toSendData.isFastMode = data.isFastMode;
-        }
-
 
 
         toSendData.config = toSendData.config || {};
@@ -593,7 +590,10 @@ export const handleN8nWebhook = async ({ action, collection, data }) => {
                 });
             }
 
-            // console.log('handleN8nWebhook toSendData: ', toSendData);
+            if (IS_DEV) {
+                console.log('handleN8nWebhook toSendData: ', toSendData);
+            }
+
             const url = webhook;
             const options = {
                 method: 'POST',
