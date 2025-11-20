@@ -34,6 +34,7 @@ export default function MediaLibrary({
     acceptedFileTypes = null,
     types = null,
     onChange = () => { },
+    onUpload = () => { },
 }) {
 
     let _acceptedFileTypes = acceptedFileTypes;
@@ -108,9 +109,12 @@ export default function MediaLibrary({
                 // add to medias state
                 if (mediaRes && mediaRes.success) {
                     const newData = [..._medias];
-                    newData.push(mediaRes.data);
+                    newData.unshift(mediaRes.data);
+                    // console.log('---- newData: ', newData);
+                    // console.log('---- standAloneMode: ', standAloneMode);
+
                     _setMedias(newData);
-                    onChange(newData);
+                    onUpload(mediaRes.data);
                 } else {
                     notify({ type: 'error', message: 'Failed to create media item' });
                 }
@@ -400,12 +404,14 @@ export default function MediaLibrary({
                                                         _editedMedias.includes(media.id)
                                                             ? < button
                                                                 type="button"
+                                                                className="bg-white rounded-full"
                                                                 onClick={() => handleMediaSelect('deselect', media.id)}
                                                             >
                                                                 <CircleCheckIcon className="size-6 text-gray-500 fill-blue-100 " />
                                                             </button>
                                                             : < button
                                                                 type="button"
+                                                                className="bg-white rounded-full"
                                                                 onClick={() => handleMediaSelect('select', media.id)}
                                                             >
                                                                 <CircleIcon className="size-6 text-gray-500" />

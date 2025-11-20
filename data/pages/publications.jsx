@@ -5,12 +5,15 @@ import { notify } from "@/components/sonnar/sonnar";
 import Table from "@/components/table";
 import { useState, useEffect } from "react";
 import { toDisplayStr } from "@/utils/other";
-import { Calendar, CheckCircle, Clock, Edit3, FileText, Pause, Play, XCircle, BookOpen } from "lucide-react";
+import { Calendar, CheckCircle, Clock, Edit3, FileText, Pause, Play, XCircle, BookOpen, Component, InfoIcon } from "lucide-react";
 import DateDisplay from "@/components/date/DateDisplay";
 import Image from "next/image";
 import MediaLibrary, { InlineMediaLibrary } from "@/components/mediaLibrary";
 import { adjustRelationalData } from "@/utils/data";
 import { cloneDeep } from "lodash";
+import { PopupModal } from "@/components/other/modals";
+import DatePicker from "react-datepicker";
+import DateInput from "@/components/date";
 
 // Status Component with Icons
 const StatusItem = ({ value, row, rowIndex, column }) => {
@@ -241,7 +244,8 @@ export default function Publications({ pathname, user, account, session, org }) 
                         id: item.id
                     },
                     data: {
-                        status: 'publishing'
+                        status: 'publishing',
+                        scheduled_at: item.scheduled_at || null,
                     },
                 }
             });
@@ -252,6 +256,7 @@ export default function Publications({ pathname, user, account, session, org }) 
                 newData.forEach(d => {
                     if (d.id === item.id) {
                         d.status = 'publishing';
+                        d.scheduled_at = item.scheduled_at || null;
                     }
                 });
                 _setData(newData);
@@ -289,7 +294,9 @@ export default function Publications({ pathname, user, account, session, org }) 
                         org_id: org ? org.id : null
                     },
                     include: {
-                        medias: true
+                        medias: true,
+                        sources: true,
+                        avatar: true,
                     },
                     orderBy: {
                         created_at: 'desc'
@@ -381,7 +388,79 @@ export default function Publications({ pathname, user, account, session, org }) 
                                 button1: 'Cancel',
                                 button2: 'Publish',
                             },
-                            func: handlePublishItem
+                            // func: handlePublishItem,
+                            ConfirmComponent: (props) => {
+                                // console.log('props: ', props);
+                                const [thisData, setThisData] = useState(props.data || {});
+
+                                return (
+                                    <div className="w-full h-[430px]">
+                                        <div>
+                                            <h4 className="text-lg font-semibold mb-4">
+                                                Confirm Publication
+                                            </h4>
+                                        </div>
+                                        <div>
+                                            <p>Select date and time to publish later</p>
+                                            <DateInput
+                                                value={thisData.scheduled_at}
+                                                showTime={true}
+                                                onChange={(d) => {
+                                                    setThisData({
+                                                        ...thisData,
+                                                        scheduled_at: d?.target?.value
+                                                    });
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="flex justify-end gap-4 mt-5 mb-6">
+                                            <button
+                                                className="btn btn-secondary"
+                                                onClick={() => { }}
+                                            >
+                                                Cancel
+                                            </button>
+
+                                            <button
+                                                className="btn btn-secondary"
+                                                onClick={() => {
+                                                    handlePublishItem(thisData);
+                                                    if (props.onClose) {
+                                                        props.onClose();
+                                                    }
+                                                }}
+                                            >
+                                                Publish &nbsp;
+                                                {thisData.scheduled_at ? ' Later' : 'Now'}
+                                            </button>
+                                        </div>
+                                        <div className="p-2 flex flex-col gap-5 text-gray-400">
+                                            <div className="p-2 rounded-md border border-gray-400 shadow-sm">
+                                                <div className="flex items-center">
+                                                    <InfoIcon className="size-5 mr-2" />
+                                                    <span className="font-semibold">
+                                                        Date Not Selected:
+                                                    </span>
+                                                </div>
+                                                <span>
+                                                    The content will be published immediately upon confirmation.
+                                                </span>
+                                            </div>
+                                            <div className="p-2 rounded-md border border-gray-400 shadow-sm">
+                                                <div className="flex items-center">
+                                                    <InfoIcon className="size-5 mr-2" />
+                                                    <span className="font-semibold">
+                                                        Date Selected:
+                                                    </span>
+                                                </div>
+                                                <span>
+                                                    The content will be published at the scheduled date and time.
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            }
                         }
                     ]}
                     columns={[
@@ -404,14 +483,14 @@ export default function Publications({ pathname, user, account, session, org }) 
                             defaultValue: 'draft',
                             Component: StatusItem
                         },
-                        // {
-                        //     key: 'scheduled_at',
-                        //     title: 'Scheduled',
-                        //     width: 'w-40',
-                        //     type: 'datetime',
-                        //     placeholder: 'Select date & time',
-                        //     Component: ({ value }) => value ? <DateDisplay date={value} format="short" showTime={true} /> : <span className="text-gray-400">Not scheduled</span>
-                        // },
+                        {
+                            key: 'scheduled_at',
+                            title: 'Scheduled',
+                            width: 'w-40',
+                            type: 'datetime',
+                            placeholder: 'Select date & time',
+                            Component: ({ value }) => value ? <DateDisplay date={value} format="short" showTime={true} /> : <span className="text-gray-400">Not scheduled</span>
+                        },
                         {
                             key: 'title',
                             title: 'Title',

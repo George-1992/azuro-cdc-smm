@@ -662,7 +662,7 @@ export const Table = ({
                                                                             data: row,
                                                                         });
                                                                     } else {
-                                                                        actionObj.func(row);
+                                                                        actionObj.func && actionObj.func(row);
                                                                     }
                                                                 }}
                                                                 className='p-1.5 bg-gray-200 border border-gray-100 rounded-md hover:bg-gray-300 transition-colors relative group'
@@ -901,37 +901,51 @@ export const Table = ({
                         isOpen={true}
                         onClose={() => _setConfirmingItem(null)}
                     >
-                        <div className='p-4'>
-                            <h2 className='text-lg font-semibold mb-2'>
-                                {_confirmingItem?.confirm.title || 'Confirm'}
-                            </h2>
-                            <p>{_confirmingItem?.confirm.message || 'Are you sure you want to delete this item?'}</p>
-                        </div>
-                        <div className='flex justify-end p-4'>
-                            <button
-                                className='btn btn-primary '
-                                onClick={() => {
-                                    // handleRowDelete(_deletingItem);
-                                    _setConfirmingItem(null)
-                                }}
-                            >
-                                {_confirmingItem?.confirm.button1 || 'Cancel'}
-                            </button>
-                            <button
-                                className={cn(
-                                    'btn ml-2',
-                                    _confirmingItem.name.includes('delete') ? 'btn-danger' : 'btn-secondary '
-                                )}
-                                onClick={() => {
-                                    if (_confirmingItem.func) {
-                                        _confirmingItem.func(_confirmingItem.data);
-                                        _setConfirmingItem(null);
-                                    }
-                                }}
-                            >
-                                {_confirmingItem?.confirm.button2 || 'Confirm'}
-                            </button>
-                        </div>
+                        {
+                            _confirmingItem.ConfirmComponent
+                                ? <_confirmingItem.ConfirmComponent
+                                    data={_confirmingItem.data}
+                                    // onChange={(data) => {
+                                    //     console.log('_confirmingItem.ConfirmComponent data: ', data);
+                                    //     _setConfirmingItem({ ..._confirmingItem, data });
+                                    // }}
+                                    onClose={() => _setConfirmingItem(null)}
+                                />
+                                : <>
+                                    <div className='p-4'>
+                                        <h2 className='text-lg font-semibold mb-2'>
+                                            {_confirmingItem?.confirm.title || 'Confirm'}
+                                        </h2>
+                                        <p>{_confirmingItem?.confirm.message || 'Are you sure you want to delete this item?'}</p>
+                                    </div>
+                                    <div className='flex justify-end p-4'>
+                                        <button
+                                            className='btn btn-primary '
+                                            onClick={() => {
+                                                // handleRowDelete(_deletingItem);
+                                                _setConfirmingItem(null)
+                                            }}
+                                        >
+                                            {_confirmingItem?.confirm.button1 || 'Cancel'}
+                                        </button>
+                                        <button
+                                            className={cn(
+                                                'btn ml-2',
+                                                _confirmingItem.name.includes('delete') ? 'btn-danger' : 'btn-secondary '
+                                            )}
+                                            onClick={() => {
+                                                if (_confirmingItem.func) {
+                                                    _confirmingItem.func(_confirmingItem.data);
+                                                    _setConfirmingItem(null);
+                                                }
+                                            }}
+                                        >
+                                            {_confirmingItem?.confirm.button2 || 'Confirm'}
+                                        </button>
+                                    </div>
+                                </>
+                        }
+
                         {_isActionLoading && <div className='animate-shimmer'></div>}
 
                     </Modal>

@@ -9,15 +9,17 @@ import { Calendar } from 'lucide-react';
  * @param {string|Date} date - Date to display (ISO string, Date object, or any parseable date)
  * @param {string} className - Additional CSS classes
  * @param {boolean} showYear - Whether to show the year (default: false)
+ * @param {boolean} showTime - Whether to show the time (default: false)
  * @param {string} format - Format type: 'short' (Jan 15) or 'long' (January 15) (default: 'short')
  * @param {number} iconSize - Size of the calendar icon in pixels (default: 16)
  */
-export const DateDisplay = ({ 
-    date, 
-    className = '', 
-    showYear = false, 
+export const DateDisplay = ({
+    date,
+    className = '',
+    showYear = false,
+    showTime = false,
     format = 'short',
-    iconSize = 16 
+    iconSize = 16
 }) => {
     if (!date) {
         return (
@@ -29,7 +31,7 @@ export const DateDisplay = ({
     }
 
     const dateObj = new Date(date);
-    
+
     // Check if date is valid
     if (isNaN(dateObj.getTime())) {
         return (
@@ -41,22 +43,30 @@ export const DateDisplay = ({
     }
 
     const monthNames = {
-        short: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        short: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
         long: ['January', 'February', 'March', 'April', 'May', 'June',
-               'July', 'August', 'September', 'October', 'November', 'December']
+            'July', 'August', 'September', 'October', 'November', 'December']
     };
 
     const month = monthNames[format][dateObj.getMonth()];
     const day = dateObj.getDate();
     const year = dateObj.getFullYear();
 
+    // Format time if needed
+    const hours = dateObj.getHours();
+    const minutes = dateObj.getMinutes();
+    const timeString = showTime
+        ? `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+        : '';
+
     return (
         <div className={`flex items-center gap-2 ${className}`}>
-            <Calendar size={iconSize} className="text-gray-500" />
+            {/* <Calendar size={iconSize} className="text-gray-500" /> */}
             <span className="text-sm font-medium">
                 {month} {day}
                 {showYear && `, ${year}`}
+                {showTime && ` ${timeString}`}
             </span>
         </div>
     );

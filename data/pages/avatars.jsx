@@ -337,8 +337,8 @@ export default function Avatars({ pathname, user, account, session, org }) {
                                                 onChange={(medias) => {
                                                     // console.log('InlineMediaLibrary props.row: ', props.row);
                                                     // console.log('InlineMediaLibrary medias: ', medias);
+                                                   
                                                     if (props.onChange) {
-
                                                         const currentMedias = props.row.medias || [];
                                                         const newMedias = [...currentMedias];
                                                         const mediasArr = Array.isArray(medias) ? medias : [medias];

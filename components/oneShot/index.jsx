@@ -35,7 +35,7 @@ export default function OneShot({ org, onSuccess = () => { } }) {
         language: org.language || org.configs?.language || 'en',
         content_type: 'video',
         status: 'draft',
-        scheduled_at: new Date().toISOString(), // ISO string
+        // scheduled_at: new Date().toISOString(), // ISO string
         global_inspiration: '',
         target_platforms: [],
         sources: [],
