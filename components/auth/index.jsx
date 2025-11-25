@@ -15,6 +15,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 
+const PROJECT_NAME = process.env.NEXT_PUBLIC_PROJECT_NAME || 'CDC SMM';
+
 export default function AuthEl({ type = 'signin', pathname, searchParams }) {
 
     const resetToken = searchParams?.token || null;
@@ -275,7 +277,7 @@ export default function AuthEl({ type = 'signin', pathname, searchParams }) {
                     />
                     <div className="text-3xl">
                         <span className="font-light" >
-                            CDC SMM
+                            {PROJECT_NAME}
                         </span>
 
                     </div>
