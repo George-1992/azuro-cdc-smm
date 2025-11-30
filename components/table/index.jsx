@@ -892,6 +892,12 @@ export const Table = ({
                             disabled={_isActionLoading}
                         />
                         {_isActionLoading && <div className='animate-shimmer'></div>}
+
+                        {
+                            modalType === 'expandable' && <div className='w-full h-28'>
+                            </div>
+                        }
+
                     </Modal>
                 )
             }

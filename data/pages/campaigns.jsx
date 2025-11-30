@@ -357,7 +357,6 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                     modalType="expandable"
                     page={_page}
                     onPageChange={handlePageChange}
-                    saveButtonTop={true}
                     actions={[
                         {
                             name: 'edit',
