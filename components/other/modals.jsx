@@ -10,9 +10,23 @@ const ModalBase = ({ isOpen, onClose, children, className = '', backdropClassNam
     // Handle escape key press
     useEffect(() => {
         const handleEscape = (e) => {
-            if (e.key === 'Escape' && isOpen) {
+            if (e.key !== 'Escape' || !isOpen) return;
+            if (!modalRef.current) {
                 onClose();
+                return;
             }
+            // If the event target is inside the modal, ignore it
+            try {
+                if (modalRef.current.contains(e.target)) return;
+                // If the currently focused element is inside the modal, ignore it
+                if (modalRef.current.contains(document.activeElement)) return;
+                // For shadow DOM / composed events, check the composed path
+                if (typeof e.composedPath === 'function' && e.composedPath().includes(modalRef.current)) return;
+            } catch (err) {
+                // If anything goes wrong with checks, don't close unexpectedly
+                return;
+            }
+            onClose();
         };
 
         if (isOpen) {
@@ -26,10 +40,17 @@ const ModalBase = ({ isOpen, onClose, children, className = '', backdropClassNam
         };
     }, [isOpen, onClose]);
 
-    // Handle backdrop click
-    const handleBackdropClick = (e) => {
+    // Handle backdrop mousedown (fixes text selection issue)
+    const handleBackdropMouseDown = (e) => {
         if (modalRef.current && !modalRef.current.contains(e.target)) {
-            onClose();
+            const handleMouseUp = (upEvent) => {
+                // Only close if mouseup also happens outside the modal
+                if (modalRef.current && !modalRef.current.contains(upEvent.target)) {
+                    onClose();
+                }
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
+            document.addEventListener('mouseup', handleMouseUp);
         }
     };
 
@@ -42,7 +63,7 @@ const ModalBase = ({ isOpen, onClose, children, className = '', backdropClassNam
                 flex items-start justify-center 
                  bg-black/50 backdrop-blur-sm ${backdropClassName}
             `}
-            onClick={handleBackdropClick}
+            onMouseDown={handleBackdropMouseDown}
         >
             <div
                 ref={modalRef}
@@ -127,14 +148,47 @@ export const ExpandableModal = ({
     // Handle escape key press
     useEffect(() => {
         const handleEscape = (e) => {
-            if (e.key === 'Escape' && isOpen) {
+            if (e.key !== 'Escape' || !isOpen) return;
+
+            // If modal ref doesn't exist yet, close immediately
+            if (!modalRef.current) {
                 onClose();
+                return;
             }
+
+            // Check if escape should be ignored (focus or interaction within modal)
+            try {
+                const isInsideModal =
+                    // Current event target is inside modal
+                    modalRef.current.contains(e.target) ||
+                    // Currently focused element is inside modal
+                    modalRef.current.contains(document.activeElement) ||
+                    // For shadow DOM support
+                    (typeof e.composedPath === 'function' &&
+                        e.composedPath().some(node => node === modalRef.current));
+
+                if (isInsideModal) return;
+            } catch (err) {
+                // If anything goes wrong with DOM checks, be safe and don't close
+                console.warn('Error checking modal containment:', err);
+                return;
+            }
+
+            // Only close if escape was pressed outside the modal
+            onClose();
         };
 
         if (isOpen) {
             document.addEventListener('keydown', handleEscape);
-            document.body.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden'; // Prevent background scroll
+
+            // Optional: Focus trap for better accessibility
+            const focusableElements = modalRef.current?.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+            if (focusableElements && focusableElements.length > 0) {
+                focusableElements[0]?.focus();
+            }
         }
 
         return () => {
@@ -147,48 +201,57 @@ export const ExpandableModal = ({
     useEffect(() => {
         if (isOpen) {
             setIsVisible(true);
-            setIsAnimating(true);
-            // Small delay to ensure DOM is ready for animation
-            setTimeout(() => setIsAnimating(false), 50);
+            // Use requestAnimationFrame for smoother animation start
+            requestAnimationFrame(() => {
+                setIsAnimating(true);
+            });
         } else if (isVisible) {
-            setIsAnimating(true);
+            setIsAnimating(false);
             // Wait for animation to complete before hiding
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 setIsVisible(false);
-                setIsAnimating(false);
-            }, 300);
+            }, 300); // Match this with your CSS transition duration
+            return () => clearTimeout(timer);
         }
     }, [isOpen, isVisible]);
 
-    // Handle backdrop click
-    const handleBackdropClick = (e) => {
+    // Handle backdrop click with drag protection
+    const handleBackdropMouseDown = (e) => {
         if (modalRef.current && !modalRef.current.contains(e.target)) {
-            onClose();
+            const handleMouseUp = (upEvent) => {
+                // Only close if mouseup also happens outside the modal
+                if (modalRef.current && !modalRef.current.contains(upEvent.target)) {
+                    onClose();
+                }
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
+            document.addEventListener('mouseup', handleMouseUp);
         }
     };
 
-    if (!isVisible) return null;
+    // Early return if not visible and not animating
+    if (!isVisible && !isAnimating) return null;
 
     return (
         <div
-            className={`fixed inset-0 z-50 transition-all duration-200 ease-in-out ${isOpen && !isAnimating
+            className={`fixed inset-0 z-50 transition-all duration-300 ease-in-out ${isOpen && isAnimating
                     ? 'bg-black/50 backdrop-blur-sm'
-                    : 'bg-black/0 backdrop-blur-none'
+                    : 'bg-black/0 backdrop-blur-none pointer-events-none'
                 } ${backdropClassName}`}
-            onClick={handleBackdropClick}
+            onMouseDown={handleBackdropMouseDown}
         >
             <div
                 ref={modalRef}
-                className={`fixed top-0 right-0 h-full w-[80%] max-w-2xl bg-white shadow-2xl transform transition-all duration-200 ease-in-out overflow-hidden ${isOpen && !isAnimating
-                        ? 'translate-x-0 opacity-100'
-                        : 'translate-x-full opacity-90'
+                className={`fixed top-0 right-0 h-full w-[80%] max-w-2xl bg-white shadow-2xl transform transition-transform duration-300 ease-in-out overflow-hidden ${isOpen && isAnimating
+                        ? 'translate-x-0'
+                        : 'translate-x-full'
                     } ${className}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header with close button */}
-                <div className={`flex items-center justify-between p-4 border-b border-gray-200 transform transition-all duration-200 delay-100 ease-out ${isOpen && !isAnimating
-                        ? 'translate-y-0 opacity-100'
-                        : '-translate-y-2 opacity-0'
+                <div className={`flex items-center justify-between p-4 border-b border-gray-200 transition-all duration-300 ease-out ${isOpen && isAnimating
+                        ? 'opacity-100'
+                        : 'opacity-0'
                     }`}>
                     {title && (
                         <h2 className="text-xl font-semibold text-gray-900">
@@ -207,9 +270,9 @@ export const ExpandableModal = ({
                 </div>
 
                 {/* Content */}
-                <div className={`p-4 h-full overflow-auto transform transition-all duration-200 delay-150 ease-out ${isOpen && !isAnimating
-                        ? 'translate-y-0 opacity-100'
-                        : 'translate-y-4 opacity-0'
+                <div className={`p-4 h-full overflow-auto transition-all duration-300 ease-out ${isOpen && isAnimating
+                        ? 'opacity-100'
+                        : 'opacity-0'
                     }`}>
                     {children}
                 </div>
