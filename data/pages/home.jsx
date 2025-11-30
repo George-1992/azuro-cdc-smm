@@ -52,6 +52,14 @@ export default function Home({ params, pathname, searchParams, session, user, ac
             description: 'Content publications and articles',
             link: '/publications',
         },
+        {
+            name: 'medias',
+            label: 'Medias',
+            icon: Database,
+            color: 'bg-red-500',
+            description: 'Media assets and files',
+            link: '/medias',
+        }
     ];
 
     // Fetch counts for each collection

@@ -33,6 +33,8 @@ const defaultItems = pagesMapSidebar || [
     },
 ]
 
+const PROJECT_NAME = process.env.NEXT_PUBLIC_PROJECT_NAME;
+
 export default function Sidebar({ items = defaultItems, pathname = '', searchParams, session, user, account, orgs, org }) {
 
     // console.log('Sidebar render ==> ', pathname);
@@ -138,7 +140,7 @@ export default function Sidebar({ items = defaultItems, pathname = '', searchPar
                         />
                         {!isCollapsed && (
                             <div className="text-large font-semibold ">
-                                CDC SMM
+                                {PROJECT_NAME || 'My App'}
                             </div>
                         )}
                     </div>

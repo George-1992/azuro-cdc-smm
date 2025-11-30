@@ -47,6 +47,7 @@ export const Table = ({
     tableExcludeKeys = [], // keys to exclude from table display
     linkPrefix = '', // if view action, link prefix
     previewKey = 'body', // key to use for preview content
+    saveButtonTop = false, // show save button at top of modal
 
     users = [], // for user select options
     leads = [], // for lead select options
@@ -535,8 +536,6 @@ export const Table = ({
 
                 </div>
 
-
-
                 {/* select, search */}
                 <div className='flex flex-shrink-0 gap-5 justify-end'>
                     {/* items per page */}
@@ -865,6 +864,7 @@ export const Table = ({
                             formData={_editingItemMain || _newItem}
                             onSubmit={handleRowSave}
                             renderOrder={getFormBuilderRenderOrder()}
+                            saveButtonTop={saveButtonTop || null} // show save button at top of modal
                             fields={[
                                 ...columns.map(col => ({
                                     ...col,

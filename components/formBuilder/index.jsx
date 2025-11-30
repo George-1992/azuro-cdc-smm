@@ -22,6 +22,7 @@ export default function FormBuilder({
     buttons = [], //buttons components to render next to the Save button
     isLoading = false,
     submitButtonText = 'Save',
+    saveButtonTop = false,
 }) {
 
     const [_formData, _setFormData] = useState(formData)
@@ -185,11 +186,32 @@ export default function FormBuilder({
     // console.log('_formData: ', _formData);
     // console.log('_formData: ', _formData);
     // console.log('fields: ', fields);
+    // console.log('saveButtonTop: ', saveButtonTop);
+
+    saveButtonTop
 
 
     return (
         <div className={className}>
             <form className="w-full gap-3 flex flex-col " onSubmit={formSubmit}>
+                {fields && fields.length > 0 && isForm && saveButtonTop &&
+                    <div className="flex items-center justify-end">
+                        {
+                            buttons && buttons.length > 0
+                                ? buttons.map((ButtonComp, bIdx) => (
+                                    <button key={`bIdx-level1-${bIdx}`} type="submit">
+                                        {ButtonComp}
+                                    </button>
+                                ))
+                                : <div className="flex items-center justify-end" type="submit">
+                                    <button className={`btn btn-primary min-w-24 ${buttonClassName}`} disabled={_isLoading || disabled} type="submit">
+                                        {submitButtonText}
+                                    </button>
+                                </div>
+                        }
+                    </div>
+                }
+
                 <div className="w-full flex flex-col gap-3">
                     {
                         _renderOrder && _renderOrder.map((rowItems, idx) => {
@@ -353,7 +375,7 @@ export default function FormBuilder({
                         })
                     }
                 </div>
-                {fields && fields.length > 0 && isForm &&
+                {fields && fields.length > 0 && isForm && !saveButtonTop &&
                     <div className="flex items-center justify-end">
                         {
                             buttons && buttons.length > 0
@@ -368,8 +390,6 @@ export default function FormBuilder({
                                     </button>
                                 </div>
                         }
-
-
                     </div>
                 }
             </form>

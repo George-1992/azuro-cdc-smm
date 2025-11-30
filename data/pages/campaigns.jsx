@@ -70,11 +70,13 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                 resObj.message = 'At least one agenda item is required';
             }
 
+            console.log('data: ', data);
+
             // make sure each agenda item has target platforms
             if (data.agenda && Array.isArray(data.agenda)) {
                 for (let i = 0; i < data.agenda.length; i++) {
                     const item = data.agenda[i];
-                    if (!item.target_platforms || !Array.isArray(item.target_platforms) || item.target_platforms.length === 0) {
+                    if (!item.targetPlatforms || !Array.isArray(item.targetPlatforms) || item.targetPlatforms.length === 0) {
                         resObj.success = false;
                         resObj.message = `Agenda schedule ${i + 1} must have at least one target platform`;
                         return resObj;
@@ -91,7 +93,6 @@ export default function Campaigns({ pathname, user, account, session, org }) {
             return false;
         }
     };
-
     const handleNewItem = async (item) => {
         let resObj = {
             success: false,
@@ -154,7 +155,6 @@ export default function Campaigns({ pathname, user, account, session, org }) {
             return resObj;
         }
     };
-
     const handleUpdateItem = async (item) => {
         let resObj = {
             success: false,
@@ -208,7 +208,6 @@ export default function Campaigns({ pathname, user, account, session, org }) {
             return resObj;
         }
     };
-
     const handleDeleteItem = async (item) => {
         let resObj = {
             success: false,
@@ -244,7 +243,7 @@ export default function Campaigns({ pathname, user, account, session, org }) {
             return resObj;
         }
     };
-
+    
     // Fetch related data (avatars, sources, week_templates)
     const fetchRelatedData = async () => {
         try {
@@ -358,6 +357,7 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                     modalType="expandable"
                     page={_page}
                     onPageChange={handlePageChange}
+                    saveButtonTop={true}
                     actions={[
                         {
                             name: 'edit',
@@ -376,7 +376,7 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                     tableExcludeKeys={['org_id', 'sources', 'agenda']}
                     editRenderOrder={[
                         ['name'],
-                        ['language', 'status'],
+                        ['language', 'status',],
                         ['avatar_id'],
                         ['sources'],
                         ['scheduled_at'],
@@ -396,6 +396,16 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                             required: true,
                             validateKey: 'length',
                             placeholder: 'Enter campaign name'
+                        },
+                        {
+                            key: 'language',
+                            title: 'Language',
+                            width: 'w-32',
+                            type: 'select',
+                            required: true,
+                            options: languageOptions,
+                            defaultValue: org.language || org.configs?.language || 'en',
+                            placeholder: 'Select language'
                         },
                         {
                             key: 'status',
@@ -439,16 +449,6 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                                     </Dropdown>
                                 )
                             }
-                        },
-                        {
-                            key: 'language',
-                            title: 'Language',
-                            width: 'w-32',
-                            type: 'select',
-                            required: true,
-                            options: languageOptions,
-                            defaultValue: org.language || org.configs?.language || 'en',
-                            placeholder: 'Select language'
                         },
                         {
                             key: 'avatar_id',
