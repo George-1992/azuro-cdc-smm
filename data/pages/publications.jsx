@@ -537,7 +537,6 @@ export default function Publications({ pathname, user, account, session, org }) 
                                                         }
 
                                                         // console.log('newMedias: ', newMedias);
-
                                                         props.onChange({
                                                             target: {
                                                                 name: 'medias',
@@ -547,7 +546,6 @@ export default function Publications({ pathname, user, account, session, org }) 
                                                     }
                                                 }}
                                             />
-
                                             <div>
                                                 <MediaLibrary
                                                     org={org}

@@ -13,6 +13,7 @@ import { widthMap } from './helper';
 import Link from 'next/link';
 import FilterAndViews from '@/components/table/parts/tableFilter';
 import { cn } from '@/libs/utils';
+import { useModal } from '@/components/modals';
 
 const passwordField = {
     name: 'password',
@@ -118,6 +119,9 @@ export const Table = ({
     const [_previewItem, _setPreviewItem] = useState(null);
 
     const [_page, _setPage] = useState(page);
+
+    const { addModal } = useModal();
+
 
     const Modal = modalType === 'expandable' ? ExpandableModal : PopupModal;
 
@@ -414,6 +418,32 @@ export const Table = ({
     };
 
 
+    // const thisModal = addModal({
+    //     id: 'new_test_id',
+    //     type: 'popup',
+    //     title: 'new_test',
+    //     component: () => (
+    //         <div>Modal content</div>
+    //     ),
+    //     buttons: [
+    //         {
+    //             label: 'Close',
+    //             className: 'btn btn-primary min-w-24',
+    //             onClick: () => {
+    //                 console.log('Close clicked');
+    //                 thisModal.close();
+    //             },
+    //         },
+    //         {
+    //             label: 'Save',
+    //             className: 'btn btn-primary min-w-24',
+    //             onClick: () => {
+    //                 console.log('Save clicked');
+    //             },
+    //         }
+    //     ],
+    // });
+
 
     // search, sort, data change
     useEffect(() => {
@@ -499,6 +529,88 @@ export const Table = ({
             _setPage(newPage);
         }
     }, [page.total]);
+
+
+    // add modals
+    useEffect(() => {
+
+        if (_editingItemMain || _newItem) {
+
+            const thisModal = addModal({
+                id: 'item_modal' + (_newItem ? '_new' : '_edit_' + _editingItemMain.id),
+                type: modalType || 'popup',
+                title: '' + (_newItem ? 'Add New Item' : 'Edit Item'),
+                className: 'px-1',
+                scrollable: false,
+                onClose: () => {
+                    thisModal.close();
+                    handleModalClose();
+                },
+                component: () => (
+                    <div>
+                        <FormBuilder
+                            // className={'w-full relative' + modalType === 'expandable' ? ' p-5' : ' '}
+                            heightClassName={modalType === 'expandable' ? 'h-[calc(100vh-160px)] p-3' : 'h-[445px]'}
+                            formData={_editingItemMain || _newItem}
+                            onSubmit={(formData) => {
+                                thisModal.close();
+                                handleRowSave(formData);
+                            }}
+                            renderOrder={getFormBuilderRenderOrder()}
+                            saveButtonTop={saveButtonTop || null} // show save button at top of modal
+                            isButtons={true}
+                            isFixedButtons={true}
+                            scrollable={true}
+                            fields={[
+                                ...columns.map(col => ({
+                                    ...col,
+                                    name: col.key,
+                                    label: col.title,
+                                    type: col.type || 'text',
+                                    options: col.options || null,
+                                    validateKey: col.validateKey || col.key,
+                                    required: col?.required || false,
+                                    disabled: col.disabled || false,
+                                    defaultValue: _newItem ? (col.defaultValue || (col.multiple ? [] : '')) : undefined,
+                                    multiple: col.multiple || false,
+                                    searchable: col.searchable || false,
+                                    clearable: col.clearable !== false,
+                                    placeholder: getPlcHolder(col),
+                                    showTime: col.showTime || false,
+                                    format: col.format || 'YYYY-MM-DD',
+                                    rows: col.rows || 3,
+                                })).filter(f => !nonEditables.includes(f.name)),
+                                ...(isUserTable ? [{
+                                    ...passwordField,
+                                    required: _newItem ? true : false
+                                }] : [])
+                            ]}
+                            disabled={_isActionLoading}
+                        />
+                    </div>
+                ),
+                // buttons: [
+                //     {
+                //         label: 'Close',
+                //         className: 'btn btn-primary min-w-24',
+                //         onClick: () => {
+                //             thisModal.close();
+                //             handleModalClose();
+                //         },
+                //     },
+                //     {
+                //         label: 'Save',
+                //         className: 'btn btn-primary min-w-24',
+                //         type: 'submit',
+                //         onClick: () => {
+                //             thisModal.close();
+                //             console.log('Save clicked');
+                //         },
+                //     }
+                // ],
+            });
+        }
+    }, [_newItem, _editingItemMain?.id]);
 
     // console.log('Table _editingItem: ', _editingItem);
     // // console.log('Table _editingCell: ', _editingCell);
@@ -847,17 +959,17 @@ export const Table = ({
 
 
             {/* combined modal for edit/add */}
-            {
+            {/* {
                 (_editingItemMain || _newItem) && (
                     <Modal
                         isOpen={true}
                         onClose={handleModalClose}
                         className={cn(
+                            'overflow-hidden',
                             modalType === 'expandable'
                                 ? 'w-11/12 max-w-5xl'
                                 : 'w-96 md:w-[600px]',
                         )}
-                    // title={_editingItemMain ? 'Edit Item' : 'Add New Item'}
                     >
                         <FormBuilder
                             className='w-full p-4 relative'
@@ -865,6 +977,7 @@ export const Table = ({
                             onSubmit={handleRowSave}
                             renderOrder={getFormBuilderRenderOrder()}
                             saveButtonTop={saveButtonTop || null} // show save button at top of modal
+                            isFixedButtons={true}
                             fields={[
                                 ...columns.map(col => ({
                                     ...col,
@@ -900,7 +1013,7 @@ export const Table = ({
 
                     </Modal>
                 )
-            }
+            } */}
             {
                 _confirmingItem && (
                     <Modal

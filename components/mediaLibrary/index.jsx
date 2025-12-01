@@ -1,6 +1,7 @@
 'use client'
 import Uploader from "@/components/mediaLibrary/filepond";
 import MediaUploader from "@/components/mediaLibrary/mediaUploader";
+import { useModal } from "@/components/modals";
 import { ButtonGroup, ButtonGroupButton } from "@/components/other/all";
 import Loading from "@/components/other/loading";
 import { PopupModal } from "@/components/other/modals";
@@ -442,11 +443,68 @@ export const InlineMediaLibrary = ({
 }) => {
 
     const [_isOpen, _setIsOpen] = useState(false);
+    const { addModal } = useModal();
 
     const handleOnChange = (selectedMedia) => {
         onChange(selectedMedia);
         _setIsOpen(false);
     };
+
+
+    // add modals
+    useEffect(() => {
+
+        console.log('_isOpen: ',_isOpen);
+        
+
+        if (_isOpen) {
+            const thisModal = addModal({
+                id: 'popup_InlineMediaLibrary',
+                type: 'popup',
+                title: 'Media Library',
+                className: 'px-1',
+                scrollable: true,
+                onClose: () => {
+                    thisModal.close();
+                    _setIsOpen(false);
+                    // handleModalClose();
+                },
+                component: () => (
+                    <div>
+                        <MediaLibrary
+                            org={org}
+                            size={'md'}
+                            types={types}
+                            acceptedFileTypes={acceptedFileTypes}
+                            allowEdit={false}
+                            collection={collection}
+                            allowSingleSelect={true}
+                            onChange={handleOnChange}
+                        />
+                    </div>
+                ),
+                // buttons: [
+                //     {
+                //         label: 'Close',
+                //         className: 'btn btn-primary min-w-24',
+                //         onClick: () => {
+                //             thisModal.close();
+                //             handleModalClose();
+                //         },
+                //     },
+                //     {
+                //         label: 'Save',
+                //         className: 'btn btn-primary min-w-24',
+                //         type: 'submit',
+                //         onClick: () => {
+                //             thisModal.close();
+                //             console.log('Save clicked');
+                //         },
+                //     }
+                // ],
+            });
+        }
+    }, [_isOpen]);
 
     return (
         <div className="w-96">
@@ -481,7 +539,7 @@ export const InlineMediaLibrary = ({
                         }
                     </div>
                 </div>
-                {_isOpen &&
+                {/* {_isOpen &&
                     <PopupModal
                         isOpen={_isOpen}
                         onClose={() => { _setIsOpen(false) }}
@@ -500,7 +558,7 @@ export const InlineMediaLibrary = ({
                             onChange={handleOnChange}
                         />
                     </PopupModal>
-                }
+                } */}
                 {/* <div className="absolute top-0 left-0 bg-red-300">
                     <MediaLibrary
                         org={org}

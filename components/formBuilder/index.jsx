@@ -9,6 +9,7 @@ import { cn } from "@/libs/utils";
 
 export default function FormBuilder({
     className = '',
+    heightClassName = '',
     fields = [],
     formData = {},
     onChange = () => { },
@@ -23,6 +24,10 @@ export default function FormBuilder({
     isLoading = false,
     submitButtonText = 'Save',
     saveButtonTop = false,
+
+    isFixedButtons = false, //if true the buttons section will be fixed/absolute at the bottom of the form
+    isButtons = true, //if false the buttons section will not be rendered
+    scrollable = false, //if true the form body will be scrollable
 }) {
 
     const [_formData, _setFormData] = useState(formData)
@@ -48,7 +53,6 @@ export default function FormBuilder({
             console.error('FormBuilder handleGetValue error ==> ', error);
         }
     };
-
     const handlesSetValue = (currentFormData, name, value) => {
         let data = { ...currentFormData };
         const thisField = fields.find(f => f.name === name);
@@ -63,10 +67,7 @@ export default function FormBuilder({
         }
 
         return data;
-    }
-
-
-
+    };
     //if any fields func is defined call it to update dependent fields
     const handleFieldsWithFunc = (data) => {
         fields.forEach(field => {
@@ -82,8 +83,7 @@ export default function FormBuilder({
                 }
             }
         });
-    }
-
+    };
 
 
     const handleInputChange = (e) => {
@@ -187,12 +187,17 @@ export default function FormBuilder({
     // console.log('_formData: ', _formData);
     // console.log('fields: ', fields);
     // console.log('saveButtonTop: ', saveButtonTop);
+    // console.log('scrollable: ', scrollable);
+    console.log('className: ', className);
 
-    saveButtonTop
 
 
     return (
-        <div className={className}>
+        <div className={cn(
+            'formBuilder',
+            className,
+            heightClassName,
+        )}>
             <form className="w-full gap-3 flex flex-col " onSubmit={formSubmit}>
                 {fields && fields.length > 0 && isForm && saveButtonTop &&
                     <div className="flex items-center justify-end">
@@ -212,7 +217,13 @@ export default function FormBuilder({
                     </div>
                 }
 
-                <div className="w-full flex flex-col gap-3">
+                <div
+                    className={cn(
+                        "w-full flex flex-col gap-3",
+                        heightClassName,
+                        scrollable ? "overflow-y-auto px-0.5" : "overflow-hidden"
+                    )}
+                >
                     {
                         _renderOrder && _renderOrder.map((rowItems, idx) => {
                             const rowFields = fields.filter(f => (rowItems.includes(f.name) || rowItems.includes(f.key)) && !f.hidden);
@@ -374,9 +385,17 @@ export default function FormBuilder({
                             );
                         })
                     }
+                    {scrollable &&
+                        <div className='h-12 w-full flex-shrink-0'></div>
+                    }
                 </div>
-                {fields && fields.length > 0 && isForm && !saveButtonTop &&
-                    <div className="flex items-center justify-end">
+                {isButtons && fields && fields.length > 0 && isForm && !saveButtonTop &&
+                    <div
+                        className={cn(
+                            isFixedButtons && 'fixed-buttons',
+                            'flex items-center justify-end',
+                        )}
+                    >
                         {
                             buttons && buttons.length > 0
                                 ? buttons.map((ButtonComp, bIdx) => (
@@ -392,7 +411,26 @@ export default function FormBuilder({
                         }
                     </div>
                 }
+
             </form>
+
+
+            {/* <ModalButtonsContainer className="flex items-center justify-end">
+                {
+                    buttons && buttons.length > 0
+                        ? buttons.map((ButtonComp, bIdx) => (
+                            <button key={`bIdx-level1-${bIdx}`} type="submit">
+                                {ButtonComp}
+                            </button>
+                        ))
+                        : <div className="flex items-center justify-end" type="submit">
+                            <button className={`btn btn-primary min-w-24 ${buttonClassName}`} disabled={_isLoading || disabled} type="submit">
+                                {submitButtonText}
+                            </button>
+                        </div>
+                }
+            </ModalButtonsContainer> */}
+            {/* <div className="w-full h-10 bg-red-300 "></div> */}
         </div>
     );
 }

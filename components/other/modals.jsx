@@ -1,11 +1,36 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { isValidElement, useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import { cn } from '@/libs/utils';
+
+
+const recursivlyFindChild = (children, predicate) => {
+    let result = null;
+    React.Children.forEach(children, (child) => {
+        if (!child) return;
+        if (result) return; // already found
+        if (predicate(child)) {
+            result = child;
+        } else if (child.props && child.props.children) {
+            result = recursivlyFindChild(child.props.children, predicate);
+        }
+    });
+    return result;
+};
 
 // Base Modal Component with Backdrop
 const ModalBase = ({ isOpen, onClose, children, className = '', backdropClassName = '' }) => {
     const modalRef = useRef(null);
+
+    // find in children the element with data-type="fixed-buttons"
+    const fixedButtonsEl = recursivlyFindChild(children, (child) => {
+        // log child className
+        // console.log('child className: ', child?.props?.className);
+
+        return null
+        // return isValidElement(child) && child.props['data-type'] === 'fixed-buttons';
+    });
 
     // Handle escape key press
     useEffect(() => {
@@ -143,52 +168,31 @@ export const ExpandableModal = ({
 }) => {
     const modalRef = useRef(null);
     const [isVisible, setIsVisible] = useState(false);
-    const [isAnimating, setIsAnimating] = useState(false);
 
     // Handle escape key press
     useEffect(() => {
         const handleEscape = (e) => {
             if (e.key !== 'Escape' || !isOpen) return;
-
-            // If modal ref doesn't exist yet, close immediately
             if (!modalRef.current) {
                 onClose();
                 return;
             }
-
-            // Check if escape should be ignored (focus or interaction within modal)
             try {
                 const isInsideModal =
-                    // Current event target is inside modal
                     modalRef.current.contains(e.target) ||
-                    // Currently focused element is inside modal
                     modalRef.current.contains(document.activeElement) ||
-                    // For shadow DOM support
                     (typeof e.composedPath === 'function' &&
                         e.composedPath().some(node => node === modalRef.current));
-
                 if (isInsideModal) return;
             } catch (err) {
-                // If anything goes wrong with DOM checks, be safe and don't close
-                console.warn('Error checking modal containment:', err);
                 return;
             }
-
-            // Only close if escape was pressed outside the modal
             onClose();
         };
 
         if (isOpen) {
             document.addEventListener('keydown', handleEscape);
-            document.body.style.overflow = 'hidden'; // Prevent background scroll
-
-            // Optional: Focus trap for better accessibility
-            const focusableElements = modalRef.current?.querySelectorAll(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-            if (focusableElements && focusableElements.length > 0) {
-                focusableElements[0]?.focus();
-            }
+            document.body.style.overflow = 'hidden';
         }
 
         return () => {
@@ -197,29 +201,23 @@ export const ExpandableModal = ({
         };
     }, [isOpen, onClose]);
 
-    // Handle modal animations
+    // Handle modal visibility and animations
     useEffect(() => {
         if (isOpen) {
             setIsVisible(true);
-            // Use requestAnimationFrame for smoother animation start
-            requestAnimationFrame(() => {
-                setIsAnimating(true);
-            });
-        } else if (isVisible) {
-            setIsAnimating(false);
-            // Wait for animation to complete before hiding
+        } else {
+            // Wait for close animation to complete before hiding
             const timer = setTimeout(() => {
                 setIsVisible(false);
-            }, 300); // Match this with your CSS transition duration
+            }, 300);
             return () => clearTimeout(timer);
         }
-    }, [isOpen, isVisible]);
+    }, [isOpen]);
 
     // Handle backdrop click with drag protection
     const handleBackdropMouseDown = (e) => {
         if (modalRef.current && !modalRef.current.contains(e.target)) {
             const handleMouseUp = (upEvent) => {
-                // Only close if mouseup also happens outside the modal
                 if (modalRef.current && !modalRef.current.contains(upEvent.target)) {
                     onClose();
                 }
@@ -229,30 +227,33 @@ export const ExpandableModal = ({
         }
     };
 
-    // Early return if not visible and not animating
-    if (!isVisible && !isAnimating) return null;
+    if (!isVisible) return null;
 
     return (
         <div
-            className={`fixed inset-0 z-50 transition-all duration-300 ease-in-out ${isOpen && isAnimating
-                    ? 'bg-black/50 backdrop-blur-sm'
-                    : 'bg-black/0 backdrop-blur-none pointer-events-none'
-                } ${backdropClassName}`}
+            className={cn(
+                "fixed inset-0 z-50 transition-all duration-300 ease-in-out",
+                isOpen
+                    ? "bg-black/50 backdrop-blur-sm"
+                    : "bg-black/0 backdrop-blur-none",
+                backdropClassName
+            )}
             onMouseDown={handleBackdropMouseDown}
         >
             <div
                 ref={modalRef}
-                className={`fixed top-0 right-0 h-full w-[80%] max-w-2xl bg-white shadow-2xl transform transition-transform duration-300 ease-in-out overflow-hidden ${isOpen && isAnimating
-                        ? 'translate-x-0'
-                        : 'translate-x-full'
-                    } ${className}`}
+                className={cn(
+                    "fixed top-0 right-0 h-full w-[80%] max-w-2xl bg-white shadow-2xl transform transition-transform duration-300 ease-in-out overflow-hidden",
+                    isOpen ? "translate-x-0" : "translate-x-full",
+                    className
+                )}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header with close button */}
-                <div className={`flex items-center justify-between p-4 border-b border-gray-200 transition-all duration-300 ease-out ${isOpen && isAnimating
-                        ? 'opacity-100'
-                        : 'opacity-0'
-                    }`}>
+                <div className={cn(
+                    "flex items-center justify-between p-4 border-b border-gray-200 transition-opacity duration-300 ease-out",
+                    isOpen ? "opacity-100" : "opacity-0"
+                )}>
                     {title && (
                         <h2 className="text-xl font-semibold text-gray-900">
                             {title}
@@ -270,16 +271,19 @@ export const ExpandableModal = ({
                 </div>
 
                 {/* Content */}
-                <div className={`p-4 h-full overflow-auto transition-all duration-300 ease-out ${isOpen && isAnimating
-                        ? 'opacity-100'
-                        : 'opacity-0'
-                    }`}>
+                <div className={cn(
+                    "p-4 h-full overflow-auto transition-opacity duration-300 ease-out",
+                    isOpen ? "opacity-100" : "opacity-0"
+                )}>
                     {children}
                 </div>
             </div>
         </div>
     );
 };
+
+
+ 
 
 // Export default for convenience
 export default { PopupModal, ExpandableModal };

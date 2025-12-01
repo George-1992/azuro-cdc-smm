@@ -90,7 +90,7 @@ export default function AgendaBuilder({
 
 
     return (
-        <div className="agenda-container w-full">
+        <div className="agenda-container w-full px-2">
             <div className="flex flex-col gap-2">
                 {
                     _items.map((item, index) => (

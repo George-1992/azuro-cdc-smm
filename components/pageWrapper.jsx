@@ -11,6 +11,7 @@ import { saGetItem, saGetItems } from "@/components/serverActions.jsx";
 import AccountMessages from "@/components/other/accountMessages";
 import { SignoutEl } from "@/components/auth";
 import ExtenSession from "@/components/auth/extenSession";
+import { ModalContainer } from "@/components/modals";
 
 const geistSans = localFont({
     src: "../app/fonts/GeistMonoVF.woff",
@@ -228,6 +229,7 @@ export default async function PageWrapper({ children, params, searchParams }) {
                 </div>
                 <ToasterSonnar />
                 <ExtenSession session={session} pathname={pathname} orgs={orgs} org={org} />
+                <ModalContainer />
             </body>
         </html>
     );
