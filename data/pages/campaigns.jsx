@@ -516,7 +516,7 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                             title: '',
                             width: 'w-32',
                             type: 'text',
-                            required: false,
+                            required: true,
                             EditComponent: (props) => {
                                 return <AgendaBuilder
                                     items={props.value || []}

@@ -121,6 +121,8 @@ export default function FormBuilder({
                         (Array.isArray(value) && value.length === 0);
 
                     if (isEmpty) {
+                        // console.log('isEmpty: ', isEmpty);
+
                         newErrors[key] = `${field.label || key} is required`;
                         hasErrors = true;
                         continue;
@@ -188,7 +190,7 @@ export default function FormBuilder({
     // console.log('fields: ', fields);
     // console.log('saveButtonTop: ', saveButtonTop);
     // console.log('scrollable: ', scrollable);
-    console.log('className: ', className);
+    // console.log('className: ', className);
 
 
 

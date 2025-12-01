@@ -553,6 +553,7 @@ export const Table = ({
                             heightClassName={modalType === 'expandable' ? 'h-[calc(100vh-160px)] p-3' : 'h-[445px]'}
                             formData={_editingItemMain || _newItem}
                             onSubmit={(formData) => {
+                                // console.log('formData: ', formData);
                                 thisModal.close();
                                 handleRowSave(formData);
                             }}

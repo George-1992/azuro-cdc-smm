@@ -530,29 +530,31 @@ export const handleN8nWebhook = async ({ action, collection, data }) => {
 
         // if its publications or contents, fetch from db including sources and avatar
         if (['publications', 'contents'].includes(collection)) {
-            let d = {
-                where: { id: toSendData.id },
-                include: {
-                    sources: true,
-                    avatar: true,
-                }
-            };
-            if (collection === 'content' || collection === 'publications') {
-                d.include = {
-                    avatar: {
-                        include: {
-                            medias: true,
-                        }
-                    },
-                    sources: true,
-                }
-            }
-            if (collection === 'avatars') {
-                d.include = {
-                    medias: true,
-                }
-            }
-            toSendData = await Prisma[collection].findUnique(d);
+            return; // disable for now
+
+            // let d = {
+            //     where: { id: toSendData.id },
+            //     include: {
+            //         sources: true,
+            //         avatar: true,
+            //     }
+            // };
+            // if (collection === 'content' || collection === 'publications') {
+            //     d.include = {
+            //         avatar: {
+            //             include: {
+            //                 medias: true,
+            //             }
+            //         },
+            //         sources: true,
+            //     }
+            // }
+            // if (collection === 'avatars') {
+            //     d.include = {
+            //         medias: true,
+            //     }
+            // }
+            // toSendData = await Prisma[collection].findUnique(d);
         }
         // console.log('handleN8nWebhook data.isFastMode: ', data.isFastMode);
 

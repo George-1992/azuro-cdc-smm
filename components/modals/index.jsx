@@ -190,7 +190,7 @@ export const ModalContainer = ({ className = '' }) => {
                     'modal p-3 bg-white shadow-lg overflow-hidden flex flex-col',
                     !isLast && 'opacity-50 pointer-events-none',
                     modal.type === 'popup' && 'w-[550px] h-4/6 lg:h-[580px] mt-20 ml-auto mr-auto rounded-lg',
-                    modal.type === 'expandable' && 'h-full w-10/12 ml-auto rounded-l-sm',
+                    modal.type === 'expandable' && 'h-full w-11/12 md:w-[1000px] ml-auto rounded-l-sm',
                 )}
                 style={s}
             >

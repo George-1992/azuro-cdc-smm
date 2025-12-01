@@ -102,6 +102,7 @@ export const handleApiGetRequest = async (req, res) => {
         const HEADERS = req.headers;
         const queryParams = req.nextUrl.searchParams;
         const orgId = queryParams.get('org_id');
+        // const take = 
         if (!orgId) {
             resObj.message = 'Organization ID is required';
             return NextResponse.json(resObj);
@@ -125,7 +126,7 @@ export const handleApiGetRequest = async (req, res) => {
                 }
             });
             resObj.success = true;
-        } else if (collection === 'publications') {
+        } else if (['publications', 'content'].includes(collection)) {
             const status = queryParams.get('status');
             let d = {
                 where: { org_id: orgId },
@@ -149,6 +150,8 @@ export const handleApiGetRequest = async (req, res) => {
                 take: limit,
             });
             resObj.success = true;
+        } else {
+            resObj.message = `Collection ${collection} is not supported for GET requests`;
         }
 
 

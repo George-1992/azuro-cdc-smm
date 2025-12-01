@@ -454,9 +454,6 @@ export const InlineMediaLibrary = ({
     // add modals
     useEffect(() => {
 
-        console.log('_isOpen: ',_isOpen);
-        
-
         if (_isOpen) {
             const thisModal = addModal({
                 id: 'popup_InlineMediaLibrary',
