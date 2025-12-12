@@ -14,7 +14,7 @@ import ExtenSession from "@/components/auth/extenSession";
 import { ModalContainer } from "@/components/modals";
 
 // imporr cron file to start cron jobs
-import "@/services/cron/main.js";
+// import "@/services/cron/main.js";
 // import startCron from '@/services/cron/main.js';
 
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, ChevronUp, ChevronDown, Edit2, Check, X, ChevronLeft, ChevronRight, CircleX, Pencil, Trash, PlusIcon, ArrowBigRight, Eye, ArrowUpToLineIcon } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Edit2, Check, X, ChevronLeft, ChevronRight, CircleX, Pencil, Trash, PlusIcon, ArrowBigRight, Eye, ArrowUpToLineIcon, ArrowRightToLineIcon } from 'lucide-react';
 import { PopupModal, ExpandableModal } from '@/components/other/modals';
 import FormBuilder from '@/components/formBuilder';
 import { notify } from '@/components/sonnar/sonnar';
@@ -758,7 +758,13 @@ export const Table = ({
                                                         if (actionObj.name === 'edit') Icon = Edit2;
                                                         if (actionObj.name === 'delete') Icon = Trash;
                                                         if (actionObj.name === 'preview') Icon = Eye;
-                                                        if (actionObj.name === 'publish') Icon = ArrowUpToLineIcon;
+                                                        if (actionObj.name === 'publish') {
+                                                            if (row.status !== 'published') {
+                                                                Icon = ArrowUpToLineIcon;
+                                                            } else {
+                                                                Icon = ArrowRightToLineIcon;
+                                                            }
+                                                        };
 
                                                         if (actionObj.name === 'edit') {
                                                             actionObj.func = handleActionEdit;
@@ -766,6 +772,7 @@ export const Table = ({
 
                                                         return (
                                                             <Comp
+                                                                disabled={_isActionLoading || row.status === 'published'}
                                                                 key={aIdx}
                                                                 onClick={() => {
                                                                     if (actionObj.confirm) {

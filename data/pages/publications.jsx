@@ -5,7 +5,7 @@ import { notify } from "@/components/sonnar/sonnar";
 import Table from "@/components/table";
 import { useState, useEffect } from "react";
 import { toDisplayStr } from "@/utils/other";
-import { Calendar, CheckCircle, Clock, Edit3, FileText, Pause, Play, XCircle, BookOpen, Component, InfoIcon } from "lucide-react";
+import { Calendar, CheckCircle, Clock, Edit3, FileText, Pause, Play, XCircle, BookOpen, Component, InfoIcon, Circle } from "lucide-react";
 import DateDisplay from "@/components/date/DateDisplay";
 import Image from "next/image";
 import MediaLibrary, { InlineMediaLibrary } from "@/components/mediaLibrary";
@@ -18,27 +18,39 @@ import DateInput from "@/components/date";
 // Status Component with Icons
 const StatusItem = ({ value, row, rowIndex, column }) => {
     const getStatusIcon = (status) => {
-        switch (status) {
-            case 'planned':
-                return <Edit3 className="w-4 h-4 text-gray-500" />;
-            case 'scheduled':
-                return <Clock className="w-4 h-4 text-blue-500" />;
-            case 'published':
-                return <CheckCircle className="w-4 h-4 text-green-500" />;
-            case 'draft':
-                return <FileText className="w-4 h-4 text-yellow-500" />;
-            case 'cancelled':
-                return <XCircle className="w-4 h-4 text-red-500" />;
-            default:
-                return <FileText className="w-4 h-4 text-gray-400" />;
+        const classNamePrefix = "w-4 h-4 text-gray-400 ";
+        if (['drafting', 'creating'].includes(status)) {
+            return <Edit3 className={classNamePrefix} />;
         }
+        else if (['publishing'].includes(status)) {
+            return <Circle className={classNamePrefix} />;
+        }
+        else if (status === '') {
+            return <Clock className={classNamePrefix} />;
+        } else if (status === 'cancelled') {
+            return <XCircle className={classNamePrefix} />;
+        } else if (status === 'published') {
+            return <CheckCircle className={classNamePrefix} />;
+        }
+
+        return <FileText className={classNamePrefix} />;
     };
 
     const getStatusColor = (status) => {
 
-        if (['draft', 'planned'].includes(status)) {
-            return 'text-yellow-600 bg-yellow-100';
+        if (['drafting'].includes(status)) {
+            return 'text-gray-400 bg-gray-100';
         }
+        else if (['draft', 'planned'].includes(status)) {
+            return 'text-gray-600 bg-gray-100';
+        }
+        else if (['creating'].includes(status)) {
+            return 'text-gray-600 bg-yellow-100';
+        }
+        else if (['created'].includes(status)) {
+            return 'text-green-600 bg-yellow-100';
+        }
+
         else if (['publishing'].includes(status)) {
             return 'text-green-600 bg-yellow-100';
         }
@@ -351,7 +363,7 @@ export default function Publications({ pathname, user, account, session, org }) 
                     className="card-1 min-w-full max-h-calc(100vh-300px)"
                     editable={true}
                     editableInline={false}
-                    allowAddNew={true}
+                    allowAddNew={false}
 
                     tableExcludeKeys={['org_id']}
                     previewKey="content"

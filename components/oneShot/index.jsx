@@ -34,7 +34,9 @@ export default function OneShot({ org, onSuccess = () => { } }) {
         name: generateName('oneshot'),
         language: org.language || org.configs?.language || 'en',
         content_type: 'video',
-        status: 'draft',
+        status: 'drafting',
+        nb_content: 0,
+        fixed_idea: false,
         // scheduled_at: new Date().toISOString(), // ISO string
         global_inspiration: '',
         target_platforms: [],
@@ -77,7 +79,6 @@ export default function OneShot({ org, onSuccess = () => { } }) {
             console.error('Error fetching related data: ', error);
         }
     };
-
     const handleSubmit = async (newData) => {
         // console.log('Publications data changed: ', newData);
         try {
@@ -86,6 +87,7 @@ export default function OneShot({ org, onSuccess = () => { } }) {
             toSaveData.org_id = org.id;
             if (_isFastMode) {
                 toSaveData.isFastMode = true;
+                toSaveData.status = 'creating';
             }
 
             // delete relational data that should not be directly updated
@@ -123,7 +125,7 @@ export default function OneShot({ org, onSuccess = () => { } }) {
             console.error('Error creating One Shot: ', error);
             notify({ type: 'error', message: error?.message || 'Failed to create One Shot.' });
         }
-    }
+    };
 
     // on fast mode change update status
     //  if its fast mode, set status to ready
@@ -200,8 +202,10 @@ export default function OneShot({ org, onSuccess = () => { } }) {
                     }}
                     renderOrder={[
                         ['language', 'content_type'],
+                        ['nb_content'],
                         ['avatar_id'],
                         ['sources'],
+                        ['fixed_idea'],
                         ['global_inspiration'],
                         ['agendaHeading'],
                         ['weekday', 'time'],
@@ -237,6 +241,15 @@ export default function OneShot({ org, onSuccess = () => { } }) {
                             options: languageOptions,
                             defaultValue: 'en',
                             placeholder: 'Select language'
+                        },
+                        {
+                            name: 'nb_content',
+                            label: 'Number of contents (0 to let AI decide number of contents)',
+                            width: 'w-32',
+                            type: 'number',
+                            required: false,
+                            defaultValue: 0,
+                            placeholder: 0,
                         },
                         {
                             name: 'content_type',
@@ -357,6 +370,13 @@ export default function OneShot({ org, onSuccess = () => { } }) {
                             //     // console.log('setValue newItem: ', newItem);
                             //     return newItem;
                             // }
+                        },
+                        {
+                            name: 'fixed_idea',
+                            label: 'Fixed Idea',
+                            width: 'w-32',
+                            type: 'toggle',
+                            required: false,
                         },
                         {
                             name: 'global_inspiration',

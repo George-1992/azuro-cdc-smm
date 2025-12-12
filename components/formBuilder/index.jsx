@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Select from "@/components/select";
 import DateInput from "@/components/date";
 import NotesArray from "@/components/other/notesArray";
+import { Toggle } from "@/components/other/toggle";
 import { cn } from "@/libs/utils";
 
 export default function FormBuilder({
@@ -306,6 +307,18 @@ export default function FormBuilder({
                                                                     // className={`${field.className || ''}`}
                                                                     />
                                                                 )
+                                                                : field.type === 'toggle'
+                                                                    ? (
+                                                                        <Toggle
+                                                                            checked={!!handleGetValue(field)}
+                                                                            onChange={(v) => {
+                                                                                const newFormData = handlesSetValue(_formData, field.name, v);
+                                                                                _setFormData(newFormData);
+                                                                                onChange(newFormData);
+                                                                            }}
+                                                                            disabled={_isLoading || field.disabled}
+                                                                        />
+                                                                    )
                                                                 : field.type === 'date' || field.type === 'datetime'
                                                                     ? (
                                                                         <DateInput

@@ -9,6 +9,21 @@ import { cloneDeep } from 'lodash';
 const IS_DEV = process.env.NODE_ENV === 'development';
 
 
+const adjustDbSaveData = (data) => {
+    try {
+        let newData = cloneDeep(data);
+
+        if (newData.nb_content !== undefined) {
+            delete newData.nb_content;
+        }
+
+        return newData;
+    } catch (error) {
+        console.error('Error in adjustDbSaveData: ', error);
+        return data;
+    }
+};
+
 export const saGetItem = async ({
     collection = '',
     query = null,
@@ -136,6 +151,13 @@ export const saUpdateItem = async ({
             resObj.message = 'Collection is required';
             return resObj;
         }
+
+        if (!query) {
+            resObj.message = 'Query is required';
+            return resObj;
+        }
+
+        query.data = adjustDbSaveData(query.data);
 
         // Prisma update supports include in the query
         const data = await Prisma[collection].update(query);
@@ -293,7 +315,7 @@ export const saCreateItem = async ({
         }
 
         const createdItem = await Prisma[collection].create({
-            data
+            data: adjustDbSaveData(data)
         });
 
         if (!createdItem) {
@@ -530,31 +552,31 @@ export const handleN8nWebhook = async ({ action, collection, data }) => {
 
         // if its publications or contents, fetch from db including sources and avatar
         if (['publications', 'contents'].includes(collection)) {
-            return; // disable for now
+            // return; // disable for now
 
-            // let d = {
-            //     where: { id: toSendData.id },
-            //     include: {
-            //         sources: true,
-            //         avatar: true,
-            //     }
-            // };
-            // if (collection === 'content' || collection === 'publications') {
-            //     d.include = {
-            //         avatar: {
-            //             include: {
-            //                 medias: true,
-            //             }
-            //         },
-            //         sources: true,
-            //     }
-            // }
-            // if (collection === 'avatars') {
-            //     d.include = {
-            //         medias: true,
-            //     }
-            // }
-            // toSendData = await Prisma[collection].findUnique(d);
+            let d = {
+                where: { id: toSendData.id },
+                include: {
+                    sources: true,
+                    avatar: true,
+                }
+            };
+            if (collection === 'content' || collection === 'publications') {
+                d.include = {
+                    avatar: {
+                        include: {
+                            medias: true,
+                        }
+                    },
+                    sources: true,
+                }
+            }
+            if (collection === 'avatars') {
+                d.include = {
+                    medias: true,
+                }
+            }
+            toSendData = await Prisma[collection].findUnique(d);
         }
         // console.log('handleN8nWebhook data.isFastMode: ', data.isFastMode);
 
@@ -601,12 +623,15 @@ export const handleN8nWebhook = async ({ action, collection, data }) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    // 'Authorization': `Bearer TOKEN_HERE`}`
                 },
-                body: JSON.stringify({
-                    collection: collection,
-                    data: toSendData,
-                    context: orgData && orgData?.configs ? orgData?.configs : {}
-                })
+                body: JSON.stringify(
+                    {
+                        collection: collection,
+                        data: toSendData,
+                        context: orgData && orgData?.configs ? orgData?.configs : {}
+                    }
+                )
             }
 
             if (!IS_DEV) {

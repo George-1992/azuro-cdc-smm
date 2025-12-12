@@ -148,9 +148,6 @@ export default function Settings({ params, pathname, searchParams, session, user
             setIsActionLoading(false);
         }
     };
-
-
-
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -220,7 +217,7 @@ export default function Settings({ params, pathname, searchParams, session, user
             setIsActionLoading(false);
             console.error('Error in handleFirstForm: ', error);
         }
-    }
+    };
 
 
 

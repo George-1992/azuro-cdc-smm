@@ -209,7 +209,9 @@ model publications {
   notes              String? @default("")
   global_inspiration String? @default("")
   target_platforms   Json?   @default("[]")
+  json_blueprint     Json?   @default("{}")
   isFastMode         Boolean @default(false)
+  fixed_idea         Boolean @default(false)
 
   scheduled_at DateTime?
   published_at DateTime?

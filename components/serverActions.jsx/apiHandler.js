@@ -3,6 +3,7 @@
 import { downloadFiles } from "@/services/downloadFiles";
 import Prisma from "@/services/prisma";
 import { uploadS3 } from "@/services/s3";
+import { campaignTasks, contentTasks } from "@/services/scheduledTasks/tasks";
 import { getFileTypeFromUrl } from "@/utils/other";
 import { nanoid } from "nanoid";
 
@@ -99,14 +100,27 @@ export const handleApiGetRequest = async (req, res) => {
     }
     try {
 
+
         const HEADERS = req.headers;
         const queryParams = req.nextUrl.searchParams;
         const orgId = queryParams.get('org_id');
-        // const take = 
+
+        const isTasks = queryParams.get('tasks');
+        if (isTasks) {
+            if (isTasks === 'contents') {
+                resObj = await contentTasks();
+                return NextResponse.json(resObj);
+            } else if (isTasks === 'campaigns') {
+                resObj = await campaignTasks();
+                return NextResponse.json(resObj);
+            }
+        };
+
         if (!orgId) {
             resObj.message = 'Organization ID is required';
             return NextResponse.json(resObj);
         }
+
         const collection = queryParams.get('collection');
         const limit = queryParams.get('limit') ? parseInt(queryParams.get('limit')) : 100;
         if (!collection) {
@@ -164,7 +178,6 @@ export const handleApiGetRequest = async (req, res) => {
         return NextResponse.json(resObj);
     }
 };
-
 export const handleApiPostRequest = async (req, res) => {
     let resObj = {
         success: false,
@@ -303,7 +316,7 @@ export const handleApiPostRequest = async (req, res) => {
         resObj.success = false;
         return NextResponse.json(resObj);
     }
-}
+};
 
 
 const isFileRequest = (req) => {

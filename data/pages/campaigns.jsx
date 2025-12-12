@@ -13,6 +13,7 @@ import { Dropdown } from "@/components/other/dropdown";
 import _, { get, map } from "lodash";
 import AgendaBuilder from "@/components/agenda/agendaBuilder";
 import { adjustRelationalData } from "@/utils/data";
+import AlertBox from "@/components/other/alertBox";
 
 
 
@@ -243,7 +244,7 @@ export default function Campaigns({ pathname, user, account, session, org }) {
             return resObj;
         }
     };
-    
+
     // Fetch related data (avatars, sources, week_templates)
     const fetchRelatedData = async () => {
         try {
@@ -538,7 +539,10 @@ export default function Campaigns({ pathname, user, account, session, org }) {
                             type: 'element',
                             Component: () => {
                                 return (
-                                    <div className="w-full h-10">
+                                    <div className="w-full">
+                                        <AlertBox type="warning" message="Any Change to the agendas will take effect the next day" className="mt-2" />
+                                        <div className="w-full h-10">
+                                        </div>
                                     </div>
                                 );
                             }
